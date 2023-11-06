@@ -1,0 +1,28 @@
+#---------------------------------------
+# General
+
+.DS_Store
+.AppleDouble
+.LSOverride
+[Dd]esktop.ini
+
+#---------------------------------------
+# Environment
+
+.direnv
+.envrc
+.actrc
+
+#---------------------------------------
+# Editors
+
+# JetBrains
+.idea/
+out/
+.fleet
+*.iws
+
+# VSCode
+.vscode/
+.history/
+*.code-workspace

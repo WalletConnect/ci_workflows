@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      infra-changed:
+        description: 'Infrastructure was modified'
+        type: boolean
+        required: true
+      app-changed:
+        description: 'App code was modified'
+        type: boolean
+        required: true
+      publish-envs:
+        description: 'The environments to publish to, needs to be a json array with names and roles, e.g. `[{name: "Staging", role: "arn:aws:iam::account:role/role-name"}`'
+        type: string
+        default: >
+          [
+            {
+              name: "Staging",
+              role: "${{vars.AWS_ROLE_STAGING}}"
+            },
+            {
+              name: "Prod",
+              role: "${{vars.AWS_ROLE_PROD}}"
+            }
+          ]
+      image-name:
+        description: 'The name of the image to publish'
+        type: string
+        default: ${{ vars.IMAGE_NAME }}
+      task-name:
+        description: 'The name of the ECS task'
+        type: string
+        default: ${{ vars.IMAGE_NAME }}
+      aws-region:
+        description: 'The AWS region to deploy to'
+        type: string
+        default: ${{ vars.AWS_REGION }}
+      aws-role-arn:
+        description: 'The ARN of the AWS role to assume to retrieve the ECS task information'
+        type: string
+        default: ${{vars.AWS_ROLE_PROD}}
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        default: ${{ vars.RUN_GROUP }}
+    secrets:
+      RELEASE_PAT:
+        required: true
+    outputs:
+      version:
+        description: 'The version of the release'
+        value: ${{ jobs.select_version.outputs.version }}
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+jobs:
+  release_app:
+    name: Release
+    if: ${{ inputs.app-changed }}
+    secrets: inherit
+    uses: ./.github/workflows/release-app.yml
+    with:
+      publish-envs: ${{ inputs.publish-envs }}
+      image-name: ${{ inputs.image-name }}
+      aws-region: ${{ inputs.aws-region }}
+      run-group: ${{ inputs.run-group }}
+
+  get_deployed_version:
+    name: Lookup Version
+    if: ${{ !inputs.app-changed }}
+    secrets: inherit
+    uses: ./.github/workflows/release-get_deployed_version.yml
+    with:
+      task-name: ${{ inputs.task-name }}
+      aws-region: ${{ inputs.aws-region }}
+      aws-role-arn: ${{ inputs.aws-role-arn }}
+      run-group: ${{ inputs.run-group }}
+
+  select_version:
+    name: Select Version
+    needs: [ release_app, get_deployed_version ]
+    if: ${{ always() && !cancelled() && !failure() }}
+    runs-on:
+      group: ${{ vars.RUN_GROUP }}
+    steps:
+      - name: Select target version
+        id: select_version
+        run: |
+          if [ "${{ inputs.app-changed }}" == "true" ]; then
+            echo "version=${{ needs.release_app.outputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ needs.get_deployed_version.outputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+    outputs:
+      version: ${{ steps.select_version.outputs.version }}

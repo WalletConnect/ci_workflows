@@ -1,0 +1,49 @@
+name: Build release environment
+description: Build standard environment input for release flow
+
+inputs:
+  staging:
+    description: "Release to staging"
+    required: true
+  prod:
+    description: "Release to prod"
+    required: true
+  aws-role-staging:
+    description: "The AWS role to use for staging"
+    default: ''
+  aws-role-prod:
+    description: "The AWS role to use for prod"
+    default: ''
+
+outputs:
+  target-envs:
+    description: "The target environments"
+    value: ${{ steps.build_envs.outputs.target_envs }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Build Envs
+      id: build_envs
+      shell: bash
+      run: |
+        echo "staging: ${{ inputs.staging }}"
+        echo "prod: ${{ inputs.prod }}"
+        echo "aws-role-staging: ${{ inputs.aws-role-staging }}"
+        echo "aws-role-prod: ${{ inputs.aws-role-prod }}"
+
+        target_envs=""
+        
+        if [ "${{ inputs.staging }}" == "true" ]; then
+          target_envs+="{name: \"Staging\", role: \"${{ inputs.aws-role-staging }}\"},"
+        fi
+        if [ "${{ inputs.publish-prod }}" == "true" ]; then
+          target_envs+="{name: \"Prod\", role: \"${{ inputs.aws-role-prod }}\"},"
+        fi
+        
+        # Remove trailing comma
+        target_envs="[${target_envs%,}]"
+        
+        echo "target_envs=$target_envs"
+        echo "target_envs=$target_envs" >> "$GITHUB_OUTPUT"

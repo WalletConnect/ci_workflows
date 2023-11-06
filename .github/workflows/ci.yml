@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      check-infra:
+        description: 'Check Infrastructure'
+        type: boolean
+        default: true
+      check-app:
+        description: 'Check App'
+        type: boolean
+        default: true
+      rust-test-args:
+        description: 'The arguments to pass to the Rust test command'
+        type: string
+        default: '--all-features --lib --bins'
+      rust-test-suites:
+        description: 'Extra Rust test suites to run'
+        type: string
+        default: ''
+      rust-toolchain:
+        description: 'The Rust version to use'
+        type: string
+        default: ${{ vars.RUST_VERSION }}
+      rust-toolchain-formatting:
+        description: 'The Rust version to use to check formatting'
+        type: string
+        default: 'nightly'
+      rust-backtrace:
+        description: 'The Rust backtrace settings'
+        type: string
+        default: 'full'
+      rust-install-protoc:
+        description: 'Install `protoc` before running rust tests'
+        type: boolean
+        default: true
+      rust-use-sccache:
+        description: 'Run `sccache-cache` before running rust tests'
+        type: boolean
+        default: true
+      rust-use-postgresql:
+        description: 'Run postgresql before running rust tests'
+        type: boolean
+        default: false
+      rust-test-env-vars:
+        description: 'The environment variables to set for the Rust tests'
+        type: string
+        default: ''
+      version:
+        description: 'The image version to use in the ECS task definition'
+        type: string
+        default: 'latest'
+      infra-stages:
+        description: 'The environments to plan against'
+        type: string
+        default: >
+          [
+            {
+              name: "staging",
+              url: "https://staging.${{ vars.SUBDOMAIN_NAME }}.walletconnect.com/health"
+            },
+            {
+              name: "prod",
+              url: "https://${{ vars.SUBDOMAIN_NAME }}.walletconnect.com/health"
+            }
+          ]
+      grafana-workspace-name:
+        description: 'The name of the Grafana workspace for the monitoring deployment'
+        type: string
+        default: ${{ vars.GRAFANA_WORKSPACE_NAME }}
+      tf-directory:
+        description: 'The directory containing the Terraform files'
+        type: string
+        default: ${{ vars.TF_DIRECTORY }}
+      tf-variables:
+        description: 'The values of the dynamic Terraform variables'
+        type: string
+        default: ''
+      aws-region:
+        description: 'The AWS region to deploy to'
+        type: string
+        default: ${{ vars.AWS_REGION }}
+      aws-role-monitoring-arn:
+        description: 'The ARN of the AWS role to assume for the monitoring deployment'
+        type: string
+        default: ${{ vars.AWS_ROLE_MONITORING }}
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        default: ${{ vars.RUN_GROUP }}
+    secrets:
+      TF_API_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  check-app:
+    name: Check App
+    uses: ./.github/workflows/ci-check-app.yml
+    if: ${{ inputs.check-app }}
+    secrets: inherit
+    with:
+      test-args: ${{ inputs.rust-test-args }}
+      test-suites: ${{ inputs.rust-test-suites }}
+      rust-toolchain: ${{ inputs.rust-toolchain }}
+      rust-toolchain-formatting: ${{ inputs.rust-toolchain-formatting }}
+      rust-backtrace: ${{ inputs.rust-backtrace }}
+      install-protoc: ${{ inputs.rust-install-protoc }}
+      use-sccache: ${{ inputs.rust-use-sccache }}
+      use-postgresql: ${{ inputs.rust-use-postgresql }}
+      test-env-vars: ${{ inputs.rust-test-env-vars }}
+      run-group: ${{ inputs.run-group }}
+
+  check-infra:
+    name: Check Infra
+    uses: ./.github/workflows/ci-check-infra.yml
+    if: ${{ inputs.check-infra }}
+    secrets: inherit
+    with:
+      stage: staging
+      tf-directory: ${{ inputs.tf-directory }}
+      run-group: ${{ inputs.run-group }}
+
+  plan-infra:
+    name: Plan Infra ❱❱ ${{ matrix.stage.name }}
+    needs: [ check-infra ]
+    secrets: inherit
+    strategy:
+      fail-fast: false
+      matrix:
+        stage: ${{ fromJson(inputs.infra-stages) }}
+    uses: ./.github/workflows/ci-plan-infra.yml
+    with:
+      version: ${{ inputs.version }}
+      stage: ${{ matrix.stage.name }}
+      stage-url: ${{ matrix.stage.url }}
+      grafana-workspace-name: ${{ inputs.grafana-workspace-name }}
+      tf-directory: ${{ inputs.tf-directory }}
+      tf-variables: ${{ inputs.tf-variables }}
+      aws-region: ${{ inputs.aws-region }}
+      aws-role-monitoring-arn: ${{ inputs.aws-role-monitoring-arn }}
+      run-group: ${{ inputs.run-group }}

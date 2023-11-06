@@ -1,0 +1,46 @@
+name: TF Vars
+description: Configure the dynamic Terraform variables
+
+inputs:
+  infra-directory:
+    description: 'The directory of the Terraform files'
+    required: true
+  variables:
+    description: 'The list of variables to configure (format: key1=value1;; key2=value2)'
+    required: true
+  var-file:
+    description: 'The name of the variable file to use'
+    required: true
+    default: 'plan.auto.tfvars'
+
+runs:
+  using: composite
+
+  steps:
+    - name: Process Key-Value Input
+      working-directory: ${{ inputs.infra-directory }}
+      shell: bash
+      run: |
+        # Normalize the input: replace line breaks with a unique pair separator (;;)
+        NORMALIZED_INPUT=$(echo '${{ inputs.variables }}' | tr '\n' ';' | sed 's/;;/;/g')
+
+        # Split the normalized input into pairs based on the unique pair separator
+        IFS=';' read -ra PAIRS <<< "$NORMALIZED_INPUT"
+
+        for PAIR in "${PAIRS[@]}"; do
+          # Split each pair into key and value using colon as the delimiter
+          KEY=$(echo $PAIR | cut -d':' -f1)
+          VALUE=$(echo $PAIR | cut -d':' -f2-)
+
+          # Trim leading and trailing whitespaces from both key and value
+          KEY=$(echo "$KEY" | xargs)
+          VALUE=$(echo "$VALUE" | xargs)
+
+          # Skip adding if both key and value are empty
+          if [ -z "$KEY" ] && [ -z "$VALUE" ]; then
+            continue
+          fi
+
+          echo "Adding $KEY with value $VALUE"
+          echo "${KEY}=\"${VALUE}\"" >> ${{ inputs.var-file }}
+        done

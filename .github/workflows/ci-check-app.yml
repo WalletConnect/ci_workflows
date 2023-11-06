@@ -1,0 +1,223 @@
+name: App - Check
+
+on:
+  workflow_call:
+    inputs:
+      test-args:
+        description: 'The arguments to pass to the test command'
+        type: string
+        default: '--all-features --lib --bins'
+      test-suites:
+        description: 'Extra test suites to run'
+        type: string
+        default: ''
+      rust-toolchain:
+        description: 'The Rust version to use'
+        type: string
+        default: 'stable'
+      rust-toolchain-formatting:
+        description: 'The Rust version to use to check formatting'
+        type: string
+        default: 'nightly'
+      rust-toolchain-udeps:
+        description: 'The Rust version to use to check formatting'
+        type: string
+        default: 'nightly'
+      rust-backtrace:
+        description: 'The Rust backtrace settings'
+        type: string
+        default: 'full'
+      install-protoc:
+        description: 'Install protoc before running tests'
+        type: boolean
+        default: true
+      use-sccache:
+        description: 'Run sccache-cache before running tests'
+        type: boolean
+        default: true
+      use-postgresql:
+        description: 'Run postgresql before running tests'
+        type: boolean
+        default: false
+      test-env-vars:
+        description: 'The environment variables to set for the tests'
+        type: string
+        default: ''
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        default: ${{ vars.RUN_GROUP }}
+
+env:
+  RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
+
+permissions:
+  contents: read
+
+jobs:
+  clippy:
+    name: Clippy
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+          profile: 'minimal'
+          components: 'cargo,clippy'
+          override: true
+
+      - name: Install Protoc
+        if: ${{ inputs.install-protoc == true }}
+        uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run sccache-cache
+        if: ${{ inputs.use-sccache == true }}
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Clippy
+        uses: WalletConnect/actions-rs/cargo@1.1.0
+        with:
+          command: clippy
+          args: --all-features --tests -- -D warnings
+
+  formatting:
+    name: Formatting
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        with:
+          toolchain: ${{ inputs.rust-toolchain-formatting }}
+          profile: 'default'
+          override: true
+
+      - name: Run sccache-cache
+        if: ${{ inputs.use-sccache == true }}
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Check Formatting
+        uses: WalletConnect/actions-rs/cargo@1.1.0
+        with:
+          command: fmt
+          args: -- --check
+
+  tests:
+    name: Unit Tests
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+          profile: 'default'
+          override: true
+
+      - name: Install Protoc
+        if: ${{ inputs.install-protoc == true }}
+        uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run sccache-cache
+        if: ${{ inputs.use-sccache == true }}
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Unit Tests
+        uses: WalletConnect/actions-rs/cargo@1.1.0
+        with:
+          command: test
+          args: ${{ inputs.test-args }}
+
+  tests-suites:
+    name: Tests Suite "${{ matrix.element }}"
+    if: (inputs.test-suites != '') && (inputs.test-suites != '[]')
+    strategy:
+      fail-fast: false
+      matrix:
+        element: ${{ fromJson(inputs.test-suites) }}
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Parse and export environment variables
+        run: |
+          echo '${{ inputs.test-env-vars }}' | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" >> $GITHUB_ENV
+
+      - name: Run Postgresql
+        if: ${{ inputs.use-postgresql == true }}
+        uses: ikalnytskyi/action-setup-postgres@v4
+
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+          profile: 'default'
+          override: true
+
+      - name: Install Protoc
+        if: ${{ inputs.install-protoc == true }}
+        uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run sccache-cache
+        if: ${{ inputs.use-sccache == true }}
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Test Suite
+        uses: WalletConnect/actions-rs/cargo@1.1.0
+        with:
+          command: test
+          args: --test ${{ matrix.element }}
+
+  unused-dependencies:
+    name: Unused Dependencies
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
+        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        with:
+          toolchain: ${{ inputs.rust-toolchain-udeps }}
+          profile: 'default'
+          override: true
+
+      - name: Run sccache-cache
+        if: ${{ inputs.use-sccache == true }}
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Check Dependencies
+        uses: WalletConnect/actions-rs/udeps@1.1.0
+        with:
+          version: 'latest'
+          args: '--all-targets'
+
+  license:
+    name: Licenses
+    runs-on:
+      group: ${{ inputs.run-group }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check license

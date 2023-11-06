@@ -1,0 +1,38 @@
+name: Create Grafana Key
+description: Creates a new API key in the specified Grafana workspace
+
+inputs:
+  workspace-name:
+    description: The name of the Grafana workspace
+    required: true
+  key-prefix:
+    description: The prefix for the created key name
+    required: true
+
+outputs:
+  workspace-id:
+    description: The ID of the Grafana workspace
+    value: ${{ steps.grafana-get-details.outputs.workspace-id }}
+  key-name:
+    description: The name of the created key
+    value: ${{ steps.grafana-get-key.outputs.key-name }}
+  key:
+    description: The value of the created key
+    value: ${{ steps.grafana-get-key.outputs.key }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Get Grafana details
+      id: grafana-get-details
+      uses: WalletConnect/actions/aws/grafana/get-details-by-name/@2.2.0
+      with:
+        workspace-name: ${{ inputs.workspace-name }}
+
+    - name: Get Grafana key
+      id: grafana-get-key
+      uses: WalletConnect/actions/aws/grafana/get-key/@2.2.0
+      with:
+        key-prefix: ${{ inputs.key-prefix }}
+        workspace-id: ${{ steps.grafana-get-details.outputs.workspace-id }}

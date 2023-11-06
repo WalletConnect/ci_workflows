@@ -1,0 +1,95 @@
+name: CD
+
+on:
+  workflow_call:
+    inputs:
+      deploy-infra:
+        description: 'Deploy infrastructure'
+        type: boolean
+        default: true
+      deploy-app:
+        description: 'Deploy application'
+        type: boolean
+        default: true
+      version:
+        description: 'The ECR tag to deploy'
+        type: string
+        required: true
+      image-name:
+        description: 'The name of the image to deploy'
+        type: string
+        default: ${{ vars.IMAGE_NAME }}
+      stage:
+        description: 'The environment to deploy to'
+        type: string
+        required: true
+      stage-url:
+        description: 'The URL of the environment'
+        type: string
+        required: true
+      grafana-workspace-name:
+        description: 'The name of the Grafana workspace for the monitoring deployment'
+        type: string
+        default: ${{ vars.GRAFANA_WORKSPACE_NAME }}
+      tf-directory:
+        description: 'The directory containing the Terraform files'
+        type: string
+        default: ${{ vars.TF_DIRECTORY }}
+      tf-variables:
+        description: 'The values of the dynamic Terraform variables'
+        type: string
+        default: ''
+      aws-region:
+        description: 'The AWS region to deploy to'
+        type: string
+        default: ${{ vars.AWS_REGION }}
+      aws-role-arn:
+        description: 'The ARN of the AWS role to assume for the main deployment'
+        type: string
+        required: true
+      aws-role-monitoring-arn:
+        description: 'The ARN of the AWS role to assume for the monitoring deployment'
+        type: string
+        default: ${{ vars.AWS_ROLE_MONITORING }}
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        default: ${{ vars.RUN_GROUP }}
+
+concurrency: cd-${{ inputs.stage }}
+
+permissions:
+  contents: write
+  checks: write
+  id-token: write
+
+jobs:
+  deploy-infra:
+    name: Deploy Infra
+    if: ${{ inputs.deploy-infra }}
+    secrets: inherit
+    uses: ./.github/workflows/sub-infra-apply.yml
+    with:
+      version: ${{ inputs.version }}
+      stage: ${{ inputs.stage }}
+      stage-url: ${{ inputs.stage-url }}
+      aws-role-monitoring-arn: ${{ inputs.aws-role-monitoring-arn }}
+      aws-region: ${{ inputs.aws-region }}
+      grafana-workspace-name: ${{ inputs.grafana-workspace-name }}
+      tf-directory: ${{ inputs.tf-directory }}
+      tf-variables: ${{ inputs.tf-variables }}
+      run-group: ${{ inputs.run-group }}
+
+  deploy-app:
+    name: Deploy App
+    needs: [ deploy-infra ]
+    if: ${{ (always() && !failure() && !cancelled()) && inputs.deploy-app }}
+    uses: ./.github/workflows/deploy-app.yml
+    with:
+      version: ${{ inputs.version }}
+      image-name: ${{ inputs.image-name }}
+      stage: ${{ inputs.stage }}
+      stage-url: ${{ inputs.stage-url }}
+      aws-role-arn: ${{ inputs.aws-role-arn }}
+      aws-region: ${{ inputs.aws-region }}
+      run-group: ${{ inputs.run-group }}

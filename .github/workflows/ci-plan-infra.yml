@@ -1,0 +1,116 @@
+name: Infra - Plan
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'The image version to use in the ECS task definition'
+        type: string
+        default: 'latest'
+      stage:
+        description: 'The environment to plan against'
+        type: string
+        required: true
+      stage-url:
+        description: 'The URL of the environment'
+        type: string
+        required: true
+      grafana-workspace-name:
+        description: 'The name of the Grafana workspace for the monitoring deployment'
+        type: string
+        default: ${{ vars.GRAFANA_WORKSPACE_NAME }}
+      tf-directory:
+        description: 'The directory containing the Terraform files'
+        type: string
+        default: ${{ vars.TF_DIRECTORY }}
+      tf-variables:
+        description: 'The values of the dynamic Terraform variables'
+        type: string
+        default: ''
+      aws-region:
+        description: 'The AWS region to deploy to'
+        type: string
+        default: ${{ vars.AWS_REGION }}
+      aws-role-monitoring-arn:
+        description: 'The ARN of the AWS role to assume for the monitoring deployment'
+        type: string
+        default: ${{ vars.AWS_ROLE_MONITORING }}
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        default: ${{ vars.RUN_GROUP }}
+    secrets:
+      TF_API_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency: deploy-${{ inputs.stage }}
+
+env:
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+  TF_WORKSPACE: wl-${{ inputs.stage }}
+
+jobs:
+  plan:
+    name: Plan `${{ inputs.stage }}`
+    runs-on:
+      group: ${{ inputs.run-group }}
+    environment:
+      name: ${{ inputs.stage }}
+      url: ${{ inputs.stage-url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Configure AWS Credentials for Monitoring account
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ inputs.aws-role-monitoring-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Create Grafana key
+        id: grafana-get-key
+        uses: WalletConnect/ci_workflows/.github/actions/grafana-key@main
+        with:
+          workspace-name: ${{ inputs.grafana-workspace-name }}
+          key-prefix: ${{ github.event.repository.name }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Cache Terraform data
+        uses: actions/cache@v3
+        with:
+          path: ${{ inputs.tf-directory }}/.terraform
+          key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
+
+      - name: Init Terraform
+        working-directory: ${{ inputs.tf-directory }}
+        run: terraform init -no-color
+
+      - name: Configure Terraform Variables
+        uses: WalletConnect/ci_workflows/.github/actions/tf-vars@main
+        with:
+          infra-directory: ${{ inputs.tf-directory }}
+          variables: |
+            image_version:${{ inputs.version }}
+            grafana_auth:${{ steps.grafana-get-key.outputs.key }}
+            ${{ inputs.tf-variables }}
+
+      - name: Plan ${{ inputs.stage }}
+        working-directory: ${{ inputs.tf-directory }}
+        run: terraform plan -no-color
+
+      - name: Delete Grafana key
+        if: ${{ always() }}
+        uses: WalletConnect/actions/aws/grafana/delete-key/@2.2.0
+        with:
+          workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
+          key-name: ${{ steps.grafana-get-key.outputs.key-name }}
