@@ -65,18 +65,14 @@ jobs:
   publish:
     name: Publish ${{ needs.update_version.outputs.version }} ❱❱ ${{ matrix.env.name }}
     needs: [ update_version ]
-    runs-on:
-      group: ${{ inputs.run-group }}
     strategy:
       fail-fast: false
       matrix:
         env: ${{ fromJson(inputs.publish-envs) }}
-    steps:
-      - name: Publish
-        uses: ./.github/workflows/build-publish.yml
-        with:
-          version: ${{ needs.update_version.outputs.version }}
-          image-name: ${{ inputs.image-name }}
-          aws-region: ${{ inputs.aws-region }}
-          aws-role-arn: ${{ matrix.env.role }}
-          run-group: ${{ inputs.run-group }}
+    uses: ./.github/workflows/build-publish.yml
+    with:
+      version: ${{ needs.update_version.outputs.version }}
+      image-name: ${{ inputs.image-name }}
+      aws-region: ${{ inputs.aws-region }}
+      aws-role-arn: ${{ matrix.env.role }}
+      run-group: ${{ inputs.run-group }}
