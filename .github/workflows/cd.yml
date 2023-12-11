@@ -68,7 +68,7 @@ jobs:
     name: Deploy Infra
     if: ${{ inputs.deploy-infra }}
     secrets: inherit
-    uses: ./.github/workflows/sub-infra-apply.yml
+    uses: ./.github/workflows/deploy-infra.yml
     with:
       version: ${{ inputs.version }}
       stage: ${{ inputs.stage }}
