@@ -68,7 +68,7 @@ jobs:
           submodules: recursive
 
       - name: Configure AWS Credentials for Monitoring account
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.aws-role-monitoring-arn }}
           aws-region: ${{ inputs.aws-region }}
@@ -110,7 +110,7 @@ jobs:
 
       - name: Delete Grafana key
         if: ${{ always() }}
-        uses: WalletConnect/actions/aws/grafana/delete-key/@2.2.0
+        uses: WalletConnect/actions/aws/grafana/delete-key/@2.2.1
         with:
           workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
           key-name: ${{ steps.grafana-get-key.outputs.key-name }}
