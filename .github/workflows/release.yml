@@ -25,12 +25,26 @@ on:
               role: "${{vars.AWS_ROLE_PROD}}"
             }
           ]
-      image-name:
-        description: 'The name of the image to publish'
+
+      task-definition-name:
+        description: 'The complete name of the ECS task'
+        type: string
+        default: ''
+      container-name:
+        description: 'The complete name of the ECS task container'
+        type: string
+        default: ''
+      task-name:
+        description: 'The name of the ECS task (used if inputs.task-definition-name is not defined)'
         type: string
         default: ${{ vars.IMAGE_NAME }}
-      task-name:
-        description: 'The name of the ECS task'
+      task-name-stage:
+        description: 'The environment of the ECS task (used if inputs.task-definition-name is not defined)'
+        type: string
+        default: 'prod'
+
+      image-name:
+        description: 'The name of the image to publish'
         type: string
         default: ${{ vars.IMAGE_NAME }}
       aws-region:
@@ -41,6 +55,7 @@ on:
         description: 'The ARN of the AWS role to assume to retrieve the ECS task information'
         type: string
         default: ${{vars.AWS_ROLE_PROD}}
+
       run-group:
         description: 'The run group to use for the actions'
         type: string
@@ -76,7 +91,10 @@ jobs:
     secrets: inherit
     uses: ./.github/workflows/release-get_deployed_version.yml
     with:
+      task-definition-name: ${{ inputs.task-definition-name }}
+      container-name: ${{ inputs.container-name }}
       task-name: ${{ inputs.task-name }}
+      task-name-stage: ${{ inputs.task-name-stage }}
       aws-region: ${{ inputs.aws-region }}
       aws-role-arn: ${{ inputs.aws-role-arn }}
       run-group: ${{ inputs.run-group }}

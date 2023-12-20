@@ -3,10 +3,15 @@ name: Release - Get Deployed Version
 on:
   workflow_call:
     inputs:
-      task-name:
-        description: 'The name of the ECS task'
+      task-definition-name:
+        description: 'The complete name of the ECS task'
         type: string
-        default: ${{ vars.IMAGE_NAME }}
+        default: ''
+      container-name:
+        description: 'The complete name of the ECS task container'
+        type: string
+        default: ''
+
       aws-region:
         description: 'The AWS region where the task is defined'
         type: string
@@ -15,18 +20,68 @@ on:
         description: 'The ARN of the AWS role to assume to retrieve the ECS task information'
         type: string
         required: true
+
+      task-name-prefix:
+        description: 'The prefix of the ECS task name (used if inputs.task-definition-name is not defined)'
+        type: string
+        default: 'wc'
+      task-name-stage:
+        description: 'The environment of the ECS task (used if inputs.task-definition-name is not defined)'
+        type: string
+        default: ''
+      task-name:
+        description: 'The name of the ECS task (used if inputs.task-definition-name is not defined)'
+        type: string
+        default: ${{ vars.IMAGE_NAME }}
+      task-name-delimiter:
+        description: 'The delimiter used to build the task name (if inputs.task-definition-name is not defined)'
+        type: string
+        default: '-'
+
       run-group:
         description: 'The run group to use for the actions'
         type: string
         default: ${{ vars.RUN_GROUP }}
+
     outputs:
       version:
         description: 'The image version of the current ECS task definition'
         value: ${{ jobs.get_version.outputs.version }}
 
 jobs:
+  get_names:
+    name: Build Names
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Task Name
+        id: build_task_name
+        if: ${{ github.event.inputs.task-definition-name == '' }}
+        uses: WalletConnect/ci_workflows/.github/actions/build-task-name@main
+        with:
+          task-region: ${{ inputs.aws-region }}
+          task-name-stage: ${{ inputs.task-name-stage }}
+          task-name: ${{ inputs.task-name }}
+
+      - name: Build Container Name
+        id: build_container_name
+        if: ${{ github.event.inputs.container-name == '' }}
+        uses: WalletConnect/ci_workflows/.github/actions/build-task-name@main
+        with:
+          task-region: ${{ inputs.aws-region }}
+          task-name-stage: ${{ inputs.task-name-stage }}
+          task-name: ${{ inputs.task-name }}
+
+      - id: result
+        run: |
+          echo "task-name=${{ inputs.task-definition-name != '' && inputs.task-definition-name || steps.build_task_name.outputs.name }}" >> "$GITHUB_OUTPUT"
+          echo "container-name=${{ inputs.container-name != '' && inputs.container-name || steps.build_container_name.outputs.name }}" >> "$GITHUB_OUTPUT"
+    outputs:
+      task-name: ${{ steps.result.outputs.task-name }}
+      container-name: ${{ steps.result.outputs.container-name }}
+
   get_version:
     name: Lookup ECS
+    needs: [ get_names ]
     runs-on:
       group: ${{ inputs.run-group }}
     steps:
@@ -36,8 +91,8 @@ jobs:
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}
           aws-region: ${{ inputs.aws-region }}
-          task-definition-name: ${{ inputs.task-name }}
-          container-name: ${{ inputs.task-name }}
+          task-definition-name: ${{ needs.get_names.outputs.task-name }}
+          container-name: ${{ needs.get_names.outputs.container-name }}
     outputs:
       version: ${{ steps.get_task.outputs.tag }}
 

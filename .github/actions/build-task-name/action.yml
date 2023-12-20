@@ -1,0 +1,50 @@
+name: TF Vars
+description: Configure the dynamic Terraform variables
+
+inputs:
+  task-name-prefix:
+    description: 'The prefix of the ECS task name'
+    default: 'wc'
+  task-region:
+    description: 'The AWS region of the task'
+    default: ''
+  task-name-stage:
+    description: 'The environment of the ECS task'
+    default: ''
+  task-name:
+    description: 'The name of the ECS task'
+    default: ''
+
+  task-name-delimiter:
+    description: 'The delimiter used to build the task name'
+    default: '-'
+
+outputs:
+  name:
+    description: "The name of the ECS task"
+    value: ${{ steps.build_task_name.outputs.result }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Build Task Name
+      id: build_task_name
+      shell: bash
+      run: |
+        strings=("${{ inputs.task-name-prefix }}" "${{ inputs.task-region }}" "${{ inputs.task-name-stage }}" "${{ inputs.task-name }}")
+        delimiter="${{ inputs.task-name-delimiter }}"
+
+        # Filter out empty values and join with delimiter
+        joined_string=""
+        for s in "${strings[@]}"; do
+          if [[ -n $s ]]; then
+            if [[ -n $joined_string ]]; then
+              joined_string+="$delimiter"
+            fi
+            joined_string+="$s"
+          fi
+        done
+
+        # Set the joined string as an output
+        echo "result=$joined_string" >> "$GITHUB_OUTPUT"

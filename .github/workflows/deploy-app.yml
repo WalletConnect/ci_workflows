@@ -11,6 +11,10 @@ on:
         description: 'The name of the image to deploy'
         type: string
         default: ${{ vars.IMAGE_NAME }}
+      task-name:
+        description: 'The name of the service to deploy, used to build cluster/service/task names'
+        type: string
+        default: ${{ vars.IMAGE_NAME }}
       stage:
         description: 'The environment to deploy to'
         type: string
@@ -50,6 +54,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Build Task Name
+        id: build_task_name
+        uses: WalletConnect/ci_workflows/.github/actions/build-task-name@main
+        with:
+          task-region: ${{ inputs.aws-region }}
+          task-name-stage: ${{ inputs.stage }}
+          task-name: ${{ inputs.task-name }}
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -66,7 +78,7 @@ jobs:
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}
           aws-region: ${{ inputs.aws-region }}
-          cluster-name: wc-${{ inputs.aws-region }}-${{ inputs.stage }}-${{ inputs.image-name }}-cluster
-          service-name: wc-${{ inputs.aws-region }}-${{ inputs.stage }}-${{ inputs.image-name }}-service
-          task-definition-name: wc-${{ inputs.aws-region }}-${{ inputs.stage }}-${{ inputs.image-name }}
+          cluster-name: ${{ steps.build_task_name.outputs.name }}-cluster
+          service-name: ${{ steps.build_task_name.outputs.name }}-service
+          task-definition-name: ${{ steps.build_task_name.outputs.name }}
           image-name: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image-name }}:${{ inputs.version }}
