@@ -61,10 +61,10 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'minimal'
@@ -73,16 +73,16 @@ jobs:
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Clippy
-        uses: WalletConnect/actions-rs/cargo@1.1.0
+        uses: WalletConnect/actions-rs/cargo@2.0.0
         with:
           command: clippy
           args: --all-features --tests -- -D warnings
@@ -93,10 +93,10 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain-formatting }}
           profile: 'default'
@@ -104,10 +104,10 @@ jobs:
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Check Formatting
-        uses: WalletConnect/actions-rs/cargo@1.1.0
+        uses: WalletConnect/actions-rs/cargo@2.0.0
         with:
           command: fmt
           args: -- --check
@@ -118,10 +118,10 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'default'
@@ -129,16 +129,16 @@ jobs:
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Unit Tests
-        uses: WalletConnect/actions-rs/cargo@1.1.0
+        uses: WalletConnect/actions-rs/cargo@2.0.0
         with:
           command: test
           args: ${{ inputs.test-args }}
@@ -154,7 +154,7 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Parse and export environment variables
         run: |
@@ -162,10 +162,10 @@ jobs:
 
       - name: Run Postgresql
         if: ${{ inputs.use-postgresql == true }}
-        uses: ikalnytskyi/action-setup-postgres@v4
+        uses: ikalnytskyi/action-setup-postgres@v5
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'default'
@@ -173,16 +173,16 @@ jobs:
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
-        uses: arduino/setup-protoc@v2
+        uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Test Suite
-        uses: WalletConnect/actions-rs/cargo@1.1.0
+        uses: WalletConnect/actions-rs/cargo@2.0.0
         with:
           command: test
           args: --test ${{ matrix.element }}
@@ -193,10 +193,10 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
           profile: 'default'
@@ -204,10 +204,10 @@ jobs:
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Check Dependencies
-        uses: WalletConnect/actions-rs/udeps@1.1.0
+        uses: WalletConnect/actions-rs/udeps@2.0.0
         with:
           version: 'latest'
           args: '--all-targets'
@@ -217,7 +217,7 @@ jobs:
     runs-on:
       group: ${{ inputs.run-group }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: check license

@@ -33,12 +33,12 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
@@ -52,17 +52,17 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -81,17 +81,17 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -111,17 +111,17 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -131,12 +131,12 @@ jobs:
         run: terraform init -no-color
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v2
+        uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: v0.45.0
 
       - name: Cache `tflint` plugins
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.tflint.d/plugins
           key: tflint-${{ hashFiles('${{ inputs.tf-directory }}/.tflint.hcl') }}

@@ -52,7 +52,7 @@ jobs:
       url: ${{ inputs.stage-url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build Task Name
         id: build_task_name
@@ -74,7 +74,7 @@ jobs:
 
       - name: Deploy image to ECS
         id: deploy
-        uses: WalletConnect/actions/aws/ecs/deploy-image/@2.2.1
+        uses: WalletConnect/actions/aws/ecs/deploy-image/@2.4.0
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}
           aws-region: ${{ inputs.aws-region }}

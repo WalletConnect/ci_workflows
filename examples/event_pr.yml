@@ -41,8 +41,8 @@ jobs:
     runs-on:
       group: ${{ vars.RUN_GROUP }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: WalletConnect/actions/github/paths-filter/@2.2.1
+      - uses: actions/checkout@v4
+      - uses: WalletConnect/actions/github/paths-filter/@2.4.0
         id: filter
     outputs:
       infra: ${{ steps.filter.outputs.infra }}

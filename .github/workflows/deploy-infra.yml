@@ -63,7 +63,7 @@ jobs:
       url: ${{ inputs.stage-url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -81,12 +81,12 @@ jobs:
           key-prefix: ${{ github.event.repository.name }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -110,7 +110,7 @@ jobs:
 
       - name: Delete Grafana key
         if: ${{ always() }}
-        uses: WalletConnect/actions/aws/grafana/delete-key/@2.2.1
+        uses: WalletConnect/actions/aws/grafana/delete-key/@2.4.0
         with:
           workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
           key-name: ${{ steps.grafana-get-key.outputs.key-name }}

@@ -40,7 +40,7 @@ jobs:
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           token: ${{ secrets.RELEASE_PAT }}
@@ -48,7 +48,7 @@ jobs:
 
       - name: Release
         id: release
-        uses: WalletConnect/actions/github/update-rust-version/@2.2.1
+        uses: WalletConnect/actions/github/update-rust-version/@2.4.0
         with:
           token: ${{ secrets.RELEASE_PAT }}
     outputs:

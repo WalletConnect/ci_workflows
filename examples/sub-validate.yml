@@ -35,17 +35,17 @@ jobs:
       url: ${{ inputs.stage-url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Install Rust ${{ inputs.version }}"
-        uses: WalletConnect/actions-rs/toolchain@1.1.0
+        uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ vars.RUST_VERSION }}
           profile: 'default'
           override: true
 
       - name: "Run Integration Tests"
-        uses: WalletConnect/actions-rs/cargo@1.1.0
+        uses: WalletConnect/actions-rs/cargo@2.0.0
         env:
           PROJECT_ID: ${{ secrets.PROJECT_ID }}
           RPC_URL: ${{ inputs.stage-url }}
