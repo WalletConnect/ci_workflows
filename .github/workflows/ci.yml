@@ -27,6 +27,10 @@ on:
         description: 'The Rust version to use to check formatting'
         type: string
         default: 'nightly'
+      rust-toolchain-udeps:
+        description: 'The Rust version to use to run udeps'
+        type: string
+        default: 'stable'
       rust-backtrace:
         description: 'The Rust backtrace settings'
         type: string
@@ -108,6 +112,7 @@ jobs:
       test-suites: ${{ inputs.rust-test-suites }}
       rust-toolchain: ${{ inputs.rust-toolchain }}
       rust-toolchain-formatting: ${{ inputs.rust-toolchain-formatting }}
+      rust-toolchain-udeps: ${{ inputs.rust-toolchain-udeps }}
       rust-backtrace: ${{ inputs.rust-backtrace }}
       install-protoc: ${{ inputs.rust-install-protoc }}
       use-sccache: ${{ inputs.rust-use-sccache }}
