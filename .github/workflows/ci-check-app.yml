@@ -22,7 +22,7 @@ on:
       rust-toolchain-udeps:
         description: 'The Rust version to use to run udeps'
         type: string
-        default: 'stable'
+        default: 'nightly-2024-02-04'
       rust-backtrace:
         description: 'The Rust backtrace settings'
         type: string
