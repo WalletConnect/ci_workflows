@@ -20,9 +20,9 @@ on:
         type: string
         default: 'nightly'
       rust-toolchain-udeps:
-        description: 'The Rust version to use to check formatting'
+        description: 'The Rust version to use to run udeps'
         type: string
-        default: 'nightly'
+        default: 'nightly-2024-02-04'
       rust-backtrace:
         description: 'The Rust backtrace settings'
         type: string
@@ -95,7 +95,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Rust ${{ inputs.rust-toolchain }}
+      - name: Install Rust ${{ inputs.rust-toolchain-formatting }}
         uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
           toolchain: ${{ inputs.rust-toolchain-formatting }}
