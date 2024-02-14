@@ -85,7 +85,7 @@ jobs:
         uses: WalletConnect/actions-rs/cargo@2.0.0
         with:
           command: clippy
-          args: --all-features --tests -- -D warnings
+          args: --workspace --all-features --all-targets -- -D warnings
 
   formatting:
     name: Formatting
