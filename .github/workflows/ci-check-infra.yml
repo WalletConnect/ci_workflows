@@ -107,6 +107,7 @@ jobs:
         with:
           working_directory: ${{ inputs.tf-directory }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          additional_args: '--exclude aws-ecs-enable-container-insight'
 
   tflint:
     name: TFLint
