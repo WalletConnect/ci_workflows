@@ -41,7 +41,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
 
     outputs:
       version:
@@ -83,6 +88,7 @@ jobs:
     name: Lookup ECS
     needs: [ get_names ]
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Get task definition from ECS
@@ -100,6 +106,7 @@ jobs:
     name: Version ➠ ${{ needs.get_version.outputs.version }}
     needs: [ get_version ]
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - run: echo "Version = ${{ needs.get_version.outputs.version }}"

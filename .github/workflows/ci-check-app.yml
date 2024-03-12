@@ -46,7 +46,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -58,6 +63,7 @@ jobs:
   clippy:
     name: Clippy
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -90,6 +96,7 @@ jobs:
   formatting:
     name: Formatting
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -115,6 +122,7 @@ jobs:
   tests:
     name: Unit Tests
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -151,6 +159,7 @@ jobs:
       matrix:
         element: ${{ fromJson(inputs.test-suites) }}
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -190,6 +199,7 @@ jobs:
   unused-dependencies:
     name: Unused Dependencies
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -215,6 +225,7 @@ jobs:
   license:
     name: Licenses
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - uses: actions/checkout@v4

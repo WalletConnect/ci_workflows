@@ -17,8 +17,6 @@ on:
 jobs:
   health-check:
     name: Health Check - ${{ inputs.stage }}
-    runs-on:
-      group: ${{ vars.RUN_GROUP }}
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}
@@ -28,8 +26,6 @@ jobs:
 
   integration-tests:
     name: Integration Tests - ${{ inputs.stage }}
-    runs-on:
-      group: ${{ vars.RUN_GROUP }}
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}

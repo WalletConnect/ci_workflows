@@ -34,7 +34,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
 
 concurrency: deploy-${{ inputs.stage }}
 
@@ -46,6 +51,7 @@ jobs:
   deploy-app:
     name: Deploy App `${{ inputs.stage }}`
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     environment:
       name: ${{ inputs.stage }}

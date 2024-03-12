@@ -22,7 +22,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -33,6 +38,7 @@ jobs:
   build-publish:
     name: Build
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout

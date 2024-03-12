@@ -19,7 +19,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
     secrets:
       RELEASE_PAT:
         required: true
@@ -37,6 +42,7 @@ jobs:
   update_version:
     name: Update Version
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -58,6 +64,7 @@ jobs:
     name: Version ➠ ${{ needs.update_version.outputs.version }}
     needs: [ update_version ]
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - run: echo "Version = ${{ needs.update_version.outputs.version }}"
@@ -75,4 +82,5 @@ jobs:
       image-name: ${{ inputs.image-name }}
       aws-region: ${{ inputs.aws-region }}
       aws-role-arn: ${{ matrix.env.role }}
+      run-label: ${{ inputs.run-label }}
       run-group: ${{ inputs.run-group }}

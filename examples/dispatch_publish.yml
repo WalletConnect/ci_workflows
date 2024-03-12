@@ -43,8 +43,6 @@ jobs:
   select_envs:
     name: Select Environments
     needs: [ ci ]
-    runs-on:
-      group: ${{ vars.RUN_GROUP }}
     steps:
       - name: Build Envs
         id: build_release_envs

@@ -14,7 +14,12 @@ on:
       run-group:
         description: 'The run group to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        required: false
+      run-label:
+        description: 'The run label to use for the actions'
+        type: string
+        required: false
+        default: 'ubuntu-latest'
     secrets:
       TF_API_TOKEN:
         required: true
@@ -30,6 +35,7 @@ jobs:
   check-fmt:
     name: Formatting
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -50,6 +56,7 @@ jobs:
   validate:
     name: Validate
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -80,6 +87,7 @@ jobs:
   tfsec:
     name: TFSec
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
@@ -112,6 +120,7 @@ jobs:
   tflint:
     name: TFLint
     runs-on:
+      labels: ${{ inputs.run-label }}
       group: ${{ inputs.run-group }}
     steps:
       - name: Checkout
