@@ -38,15 +38,15 @@ on:
         type: string
         default: '-'
 
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
       run-label:
         description: 'The run label to use for the actions'
         type: string
         required: false
         default: 'ubuntu-latest'
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        required: false
 
     outputs:
       version:

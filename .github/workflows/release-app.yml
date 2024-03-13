@@ -16,15 +16,15 @@ on:
         description: 'The AWS region to publish to'
         type: string
         default: ${{ vars.AWS_REGION }}
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
       run-label:
         description: 'The run label to use for the actions'
         type: string
         required: false
         default: 'ubuntu-latest'
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        required: false
     secrets:
       RELEASE_PAT:
         required: true

@@ -11,15 +11,15 @@ on:
         description: 'The directory containing the Terraform files'
         type: string
         default: ${{ vars.TF_DIRECTORY }}
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
       run-label:
         description: 'The run label to use for the actions'
         type: string
         required: false
         default: 'ubuntu-latest'
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        required: false
     secrets:
       TF_API_TOKEN:
         required: true

@@ -19,15 +19,15 @@ on:
         description: 'The ARN of the AWS role to assume for publication'
         type: string
         required: true
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
       run-label:
         description: 'The run label to use for the actions'
         type: string
         required: false
         default: 'ubuntu-latest'
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        required: false
 
 permissions:
   contents: read

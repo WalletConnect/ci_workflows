@@ -35,15 +35,15 @@ on:
         description: 'The ARN of the AWS role to assume for the monitoring deployment'
         type: string
         default: ${{ vars.AWS_ROLE_MONITORING }}
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
       run-label:
         description: 'The run label to use for the actions'
         type: string
         required: false
         default: 'ubuntu-latest'
+      run-group:
+        description: 'The run group to use for the actions'
+        type: string
+        required: false
     secrets:
       TF_API_TOKEN:
         required: true
