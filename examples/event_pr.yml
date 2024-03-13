@@ -26,6 +26,8 @@ permissions:
 jobs:
   check_pr:
     name: Check PR
+    runs-on:
+      labels: ubuntu-latest
     permissions:
       statuses: write
     steps:
@@ -36,6 +38,8 @@ jobs:
 
   paths_filter:
     name: Paths Filter
+    runs-on:
+      labels: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: WalletConnect/actions/github/paths-filter/@2.4.0
@@ -57,5 +61,7 @@ jobs:
     name: Merge Check
     needs: [ check_pr, ci ]
     if: ${{ always() && !cancelled() && !failure() }}
+    runs-on:
+      labels: ubuntu-latest
     steps:
       - run: echo "CI is successful"

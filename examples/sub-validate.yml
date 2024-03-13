@@ -17,6 +17,8 @@ on:
 jobs:
   health-check:
     name: Health Check - ${{ inputs.stage }}
+    runs-on:
+      labels: ubuntu-latest
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}
@@ -26,6 +28,8 @@ jobs:
 
   integration-tests:
     name: Integration Tests - ${{ inputs.stage }}
+    runs-on:
+      labels: ubuntu-latest
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}
