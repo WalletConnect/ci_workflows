@@ -97,7 +97,7 @@ jobs:
     name: Formatting
     runs-on:
       labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group == '' && null || inputs.run-group }}
+      group: ${{ inputs.run-group != '' && inputs.run-group || null }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
