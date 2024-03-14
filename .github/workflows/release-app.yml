@@ -19,7 +19,6 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: true
         default: 'ubuntu-latest'
     secrets:
       RELEASE_PAT:
