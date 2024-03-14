@@ -11,10 +11,10 @@ on:
         description: 'The directory containing the Terraform files'
         type: string
         default: ${{ vars.TF_DIRECTORY }}
-      run-group:
-        description: 'The run group to use for the actions'
+      run-label:
+        description: 'The run label to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        default: 'ubuntu-latest'
     secrets:
       TF_API_TOKEN:
         required: true
@@ -29,8 +29,7 @@ env:
 jobs:
   check-fmt:
     name: Formatting
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,8 +48,7 @@ jobs:
 
   validate:
     name: Validate
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -79,8 +77,7 @@ jobs:
 
   tfsec:
     name: TFSec
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,8 +108,7 @@ jobs:
 
   tflint:
     name: TFLint
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

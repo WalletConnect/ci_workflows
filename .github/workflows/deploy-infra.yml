@@ -35,10 +35,10 @@ on:
         description: 'The ARN of the AWS role to assume for the monitoring deployment'
         type: string
         default: ${{ vars.AWS_ROLE_MONITORING }}
-      run-group:
-        description: 'The run group to use for the actions'
+      run-label:
+        description: 'The run label to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        default: 'ubuntu-latest'
     secrets:
       TF_API_TOKEN:
         required: true
@@ -56,8 +56,7 @@ env:
 jobs:
   apply-infra:
     name: Apply Infra `${{ inputs.stage }}`
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}

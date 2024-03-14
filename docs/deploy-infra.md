@@ -38,7 +38,7 @@ graph TB
 | `tf-variables`            | `string` | The values of the dynamic Terraform variables                    | ``                                   |
 | `aws-region`              | `string` | The AWS region to deploy to                                      | `${{ vars.AWS_REGION }}`             |
 | `aws-role-monitoring-arn` | `string` | The ARN of the AWS role to assume do manage the monitoring stack | `${{ vars.AWS_ROLE_MONITORING }}`    |
-| `run-group`               | `string` | The run group to use for the actions                             | `${{ vars.RUN_GROUP }}`              |
+| `run-label`               | `string` | The run label to use for the actions                             | `ubuntu-latest`              |
 
 ## Outputs
 
@@ -56,7 +56,6 @@ graph TB
 - `AWS_REGION` (only if `inputs.aws-region` is not set)
 - `AWS_ROLE_MONITORING` (only if `inputs.aws-role-monitoring-arn` is not set)
 - `GRAFANA_WORKSPACE_NAME` (only if `inputs.grafana-workspace-name` is not set)
-- `RUN_GROUP` (only if `inputs.run-group` is not set)
 - `TF_DIRECTORY` (only if `inputs.tf-directory` is not set)
 
 ## Repository Secrets

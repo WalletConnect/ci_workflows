@@ -16,10 +16,10 @@ on:
         description: 'The AWS region to publish to'
         type: string
         default: ${{ vars.AWS_REGION }}
-      run-group:
-        description: 'The run group to use for the actions'
+      run-label:
+        description: 'The run label to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        default: 'ubuntu-latest'
     secrets:
       RELEASE_PAT:
         required: true
@@ -36,8 +36,7 @@ permissions:
 jobs:
   update_version:
     name: Update Version
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,8 +56,7 @@ jobs:
   display_version:
     name: Version ➠ ${{ needs.update_version.outputs.version }}
     needs: [ update_version ]
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - run: echo "Version = ${{ needs.update_version.outputs.version }}"
 
@@ -75,4 +73,4 @@ jobs:
       image-name: ${{ inputs.image-name }}
       aws-region: ${{ inputs.aws-region }}
       aws-role-arn: ${{ matrix.env.role }}
-      run-group: ${{ inputs.run-group }}
+      run-label: ${{ inputs.run-label }}

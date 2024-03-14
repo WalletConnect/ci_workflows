@@ -43,10 +43,10 @@ on:
         description: 'The environment variables to set for the tests'
         type: string
         default: ''
-      run-group:
-        description: 'The run group to use for the actions'
+      run-label:
+        description: 'The run label to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        default: 'ubuntu-latest'
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -57,8 +57,7 @@ permissions:
 jobs:
   clippy:
     name: Clippy
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,8 +88,7 @@ jobs:
 
   formatting:
     name: Formatting
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,8 +112,7 @@ jobs:
 
   tests:
     name: Unit Tests
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -150,8 +147,7 @@ jobs:
       fail-fast: false
       matrix:
         element: ${{ fromJson(inputs.test-suites) }}
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -189,8 +185,7 @@ jobs:
 
   unused-dependencies:
     name: Unused Dependencies
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -214,8 +209,7 @@ jobs:
 
   license:
     name: Licenses
-    runs-on:
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v1

@@ -89,10 +89,10 @@ on:
         description: 'The ARN of the AWS role to assume for the monitoring deployment'
         type: string
         default: ${{ vars.AWS_ROLE_MONITORING }}
-      run-group:
-        description: 'The run group to use for the actions'
+      run-label:
+        description: 'The run label to use for the actions'
         type: string
-        default: ${{ vars.RUN_GROUP }}
+        default: 'ubuntu-latest'
     secrets:
       TF_API_TOKEN:
         required: true
@@ -118,7 +118,7 @@ jobs:
       use-sccache: ${{ inputs.rust-use-sccache }}
       use-postgresql: ${{ inputs.rust-use-postgresql }}
       test-env-vars: ${{ inputs.rust-test-env-vars }}
-      run-group: ${{ inputs.run-group }}
+      run-label: ${{ inputs.run-label }}
 
   check-infra:
     name: Check Infra
@@ -128,7 +128,7 @@ jobs:
     with:
       stage: staging
       tf-directory: ${{ inputs.tf-directory }}
-      run-group: ${{ inputs.run-group }}
+      run-label: ${{ inputs.run-label }}
 
   plan-infra:
     name: Plan Infra ❱❱ ${{ matrix.stage.name }}
@@ -148,4 +148,4 @@ jobs:
       tf-variables: ${{ inputs.tf-variables }}
       aws-region: ${{ inputs.aws-region }}
       aws-role-monitoring-arn: ${{ inputs.aws-role-monitoring-arn }}
-      run-group: ${{ inputs.run-group }}
+      run-label: ${{ inputs.run-label }}
