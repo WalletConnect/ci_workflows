@@ -29,7 +29,7 @@ graph TB
 | `stage-url`    | `string` | The URL of the environment                           | `--`                     |
 | `aws-region`   | `string` | The AWS region to deploy to                          | `${{ vars.AWS_REGION }}` |
 | `aws-role-arn` | `string` | The ARN of the AWS role to assume for the deployment | `--`                     |
-| `run-group`    | `string` | The run group to use for the actions                 | `${{ vars.RUN_GROUP }}`  |
+| `run-label`    | `string` | The run label to use for the actions                 | `ubuntu-latest`          |
 
 ## Outputs
 
@@ -46,7 +46,6 @@ graph TB
 
 - `AWS_REGION` (only if `inputs.aws-region` is not set)
 - `IMAGE_NAME` (only if `inputs.image-name` is not set)
-- `RUN_GROUP` (only if `inputs.run-group` is not set)
 
 --
 

@@ -28,7 +28,7 @@ graph LR
 |----------------|----------|-----------------------------------------------------------------------------------------|----------------------------|
 | `stage`        | `string` | The name of the Terraform workspace to use. The `wl-` prefix will be added to the name. | `--`                       |
 | `tf-directory` | `string` | The directory containing the Terraform files                                            | `${{ vars.TF_DIRECTORY }}` |
-| `run-group`    | `string` | The run group to use for the actions                                                    | `${{ vars.RUN_GROUP }}`    |
+| `run-label`    | `string` | The run label to use for the actions                                                    | `ubuntu-latest`    |
 
 ## Outputs
 

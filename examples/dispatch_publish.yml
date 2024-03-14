@@ -43,8 +43,7 @@ jobs:
   select_envs:
     name: Select Environments
     needs: [ ci ]
-    runs-on:
-      labels: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Build Envs
         id: build_release_envs

@@ -38,12 +38,8 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: false
+        required: true
         default: 'ubuntu-latest'
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
     secrets:
       TF_API_TOKEN:
         required: true
@@ -61,9 +57,7 @@ env:
 jobs:
   plan:
     name: Plan `${{ inputs.stage }}`
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     environment:
       name: ${{ inputs.stage }}
       url: ${{ inputs.stage-url }}

@@ -46,12 +46,8 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: false
+        required: true
         default: 'ubuntu-latest'
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -62,9 +58,7 @@ permissions:
 jobs:
   clippy:
     name: Clippy
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,9 +89,7 @@ jobs:
 
   formatting:
     name: Formatting
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group != '' && inputs.run-group || null }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,9 +113,7 @@ jobs:
 
   tests:
     name: Unit Tests
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -158,9 +148,7 @@ jobs:
       fail-fast: false
       matrix:
         element: ${{ fromJson(inputs.test-suites) }}
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -198,9 +186,7 @@ jobs:
 
   unused-dependencies:
     name: Unused Dependencies
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -224,9 +210,7 @@ jobs:
 
   license:
     name: Licenses
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - uses: actions/checkout@v4
       - uses: EmbarkStudios/cargo-deny-action@v1

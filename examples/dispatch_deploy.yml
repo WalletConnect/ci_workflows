@@ -49,8 +49,7 @@ jobs:
     name: Select Version
     needs: [ get_deployed_version ]
     if: ${{ always() && !cancelled() && !failure() }}
-    runs-on:
-      labels: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Select target version
         id: select_version

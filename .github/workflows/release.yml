@@ -59,12 +59,8 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: false
+        required: true
         default: 'ubuntu-latest'
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
     secrets:
       RELEASE_PAT:
         required: true
@@ -89,7 +85,6 @@ jobs:
       image-name: ${{ inputs.image-name }}
       aws-region: ${{ inputs.aws-region }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
 
   get_deployed_version:
     name: Lookup Version
@@ -104,15 +99,12 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       aws-role-arn: ${{ inputs.aws-role-arn }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
 
   select_version:
     name: Select Version
     needs: [ release_app, get_deployed_version ]
     if: ${{ always() && !cancelled() && !failure() }}
-    runs-on:
-      labels: ${{ inputs.run-label }}
-      group: ${{ inputs.run-group }}
+    runs-on: ${{ inputs.run-label }}
     steps:
       - name: Select target version
         id: select_version

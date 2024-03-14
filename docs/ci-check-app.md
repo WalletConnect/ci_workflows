@@ -32,7 +32,7 @@ graph LR
 | `rust-backtrace`            | `string`  | The Rust backtrace settings                      | `full`                        |
 | `install-protoc`            | `boolean` | Install `protoc` before running the rust tests.  | `true`                        |
 | `use-sccache`               | `boolean` | Install `sccache` before running the rust tests. | `true`                        |
-| `run-group`                 | `string`  | The run group to use for the actions             | `${{ vars.RUN_GROUP }}`       |
+| `run-label`                 | `string`  | The run label to use for the actions             | `ubuntu-latest`               |
 
 ## Outputs
 

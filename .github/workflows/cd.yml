@@ -58,12 +58,8 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: false
+        required: true
         default: 'ubuntu-latest'
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
 
 concurrency: cd-${{ inputs.stage }}
 
@@ -88,7 +84,6 @@ jobs:
       tf-directory: ${{ inputs.tf-directory }}
       tf-variables: ${{ inputs.tf-variables }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
 
   deploy-app:
     name: Deploy App
@@ -104,4 +99,3 @@ jobs:
       aws-role-arn: ${{ inputs.aws-role-arn }}
       aws-region: ${{ inputs.aws-region }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}

@@ -31,8 +31,7 @@ permissions:
 jobs:
   paths_filter:
     name: Paths Filter
-    runs-on:
-      labels: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: WalletConnect/actions/github/paths-filter/@2.4.0

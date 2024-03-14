@@ -28,7 +28,7 @@ graph TB
 | `tf-variables`            | `string` | The values of the dynamic Terraform variables                                                                                                                                                | ``                                   |
 | `aws-region`              | `string` | The AWS region to deploy to                                                                                                                                                                  | `${{ vars.AWS_REGION }}`             |
 | `aws-role-monitoring-arn` | `string` | The ARN of the AWS role to assume for the monitoring deployment                                                                                                                              | `${{ vars.AWS_ROLE_MONITORING }}`    |
-| `run-group`               | `string` | The run group to use for the actions                                                                                                                                                         | `${{ vars.RUN_GROUP }}`              |
+| `run-label`               | `string` | The run label to use for the actions                                                                                                                                                         | `ubuntu-latest`              |
 
 ## Outputs
 

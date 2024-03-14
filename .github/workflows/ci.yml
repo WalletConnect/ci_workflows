@@ -92,12 +92,8 @@ on:
       run-label:
         description: 'The run label to use for the actions'
         type: string
-        required: false
+        required: true
         default: 'ubuntu-latest'
-      run-group:
-        description: 'The run group to use for the actions'
-        type: string
-        required: false
     secrets:
       TF_API_TOKEN:
         required: true
@@ -124,7 +120,6 @@ jobs:
       use-postgresql: ${{ inputs.rust-use-postgresql }}
       test-env-vars: ${{ inputs.rust-test-env-vars }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
 
   check-infra:
     name: Check Infra
@@ -135,7 +130,6 @@ jobs:
       stage: staging
       tf-directory: ${{ inputs.tf-directory }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
 
   plan-infra:
     name: Plan Infra ❱❱ ${{ matrix.stage.name }}
@@ -156,4 +150,3 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       aws-role-monitoring-arn: ${{ inputs.aws-role-monitoring-arn }}
       run-label: ${{ inputs.run-label }}
-      run-group: ${{ inputs.run-group }}
