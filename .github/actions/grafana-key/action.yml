@@ -26,13 +26,13 @@ runs:
   steps:
     - name: Get Grafana details
       id: grafana-get-details
-      uses: WalletConnect/actions/aws/grafana/get-details-by-name/@2.4.0
+      uses: WalletConnect/actions/aws/grafana/get-details-by-name/@2.4.1
       with:
         workspace-name: ${{ inputs.workspace-name }}
 
     - name: Get Grafana key
       id: grafana-get-key
-      uses: WalletConnect/actions/aws/grafana/get-key/@2.4.0
+      uses: WalletConnect/actions/aws/grafana/get-key/@2.4.1
       with:
         key-prefix: ${{ inputs.key-prefix }}
         workspace-id: ${{ steps.grafana-get-details.outputs.workspace-id }}

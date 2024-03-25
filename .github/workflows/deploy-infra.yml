@@ -110,7 +110,7 @@ jobs:
 
       - name: Delete Grafana key
         if: ${{ always() }}
-        uses: WalletConnect/actions/aws/grafana/delete-key/@2.4.0
+        uses: WalletConnect/actions/aws/grafana/delete-key/@2.4.1
         with:
           workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
           key-name: ${{ steps.grafana-get-key.outputs.key-name }}
