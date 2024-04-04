@@ -27,8 +27,9 @@ graph LR
 | name                        | type      | description                                      | default                       |
 |-----------------------------|-----------|--------------------------------------------------|-------------------------------|
 | `test-args`                 | `string`  | The arguments to pass to the test command        | `--all-features --lib --bins` |
-| `rust-toolchain`            | `string`  | The Rust version to use.                         | `stable`                      |
-| `rust-toolchain-formatting` | `string`  | The Rust version to use to check formatting      | `nightly`                     |
+| `rust-toolchain`            | `string`  | The Rust version to use                          | `stable`                      |
+| `rust-toolchain-formatting` | `string`  | The Rust version to use to check formatting      | `stable`                      |
+| `rust-toolchain-udeps`      | `string`  | The Rust version to use to run udeps             | `stable`                      |
 | `rust-backtrace`            | `string`  | The Rust backtrace settings                      | `full`                        |
 | `install-protoc`            | `boolean` | Install `protoc` before running the rust tests.  | `true`                        |
 | `use-sccache`               | `boolean` | Install `sccache` before running the rust tests. | `true`                        |
