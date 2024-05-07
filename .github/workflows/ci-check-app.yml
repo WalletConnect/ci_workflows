@@ -23,6 +23,10 @@ on:
         description: 'The Rust version to use to run udeps'
         type: string
         default: 'nightly'
+      check-udeps:
+        description: Enable checking for unusued dependencies
+        type: boolean
+        default: true
       rust-backtrace:
         description: 'The Rust backtrace settings'
         type: string
@@ -186,6 +190,7 @@ jobs:
   unused-dependencies:
     name: Unused Dependencies
     runs-on: ${{ inputs.run-label }}
+    if: ${{ inputs.check-udeps }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
