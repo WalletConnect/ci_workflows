@@ -31,6 +31,10 @@ on:
         description: 'The Rust version to use to run udeps'
         type: string
         default: 'nightly'
+      check-udeps:
+        description: Enable checking for unusued dependencies
+        type: boolean
+        default: true
       rust-backtrace:
         description: 'The Rust backtrace settings'
         type: string
@@ -113,6 +117,7 @@ jobs:
       rust-toolchain: ${{ inputs.rust-toolchain }}
       rust-toolchain-formatting: ${{ inputs.rust-toolchain-formatting }}
       rust-toolchain-udeps: ${{ inputs.rust-toolchain-udeps }}
+      check-udeps: ${{ inputs.check-udeps }}
       rust-backtrace: ${{ inputs.rust-backtrace }}
       install-protoc: ${{ inputs.rust-install-protoc }}
       use-sccache: ${{ inputs.rust-use-sccache }}
