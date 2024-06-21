@@ -52,6 +52,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Build Task Name
         id: build_task_name
