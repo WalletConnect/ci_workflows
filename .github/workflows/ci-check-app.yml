@@ -65,6 +65,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: WalletConnect/actions-rs/toolchain@2.0.0
@@ -96,7 +99,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
       - name: Install Rust ${{ inputs.rust-toolchain-formatting }}
         uses: WalletConnect/actions-rs/toolchain@2.0.0
         with:
@@ -120,6 +125,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: WalletConnect/actions-rs/toolchain@2.0.0
@@ -155,6 +163,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Parse and export environment variables
         run: |
@@ -194,6 +205,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
         uses: WalletConnect/actions-rs/toolchain@2.0.0
@@ -217,6 +231,9 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
       - uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: check license

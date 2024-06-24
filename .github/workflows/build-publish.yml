@@ -39,6 +39,8 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.version }}
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
