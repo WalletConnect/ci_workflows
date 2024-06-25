@@ -67,6 +67,7 @@ jobs:
       fail-fast: false
       matrix:
         env: ${{ fromJson(inputs.publish-envs) }}
+    secrets: inherit
     uses: ./.github/workflows/build-publish.yml
     with:
       version: ${{ needs.update_version.outputs.version }}
