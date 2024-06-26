@@ -88,6 +88,7 @@ jobs:
     name: Deploy App
     needs: [ deploy-infra ]
     if: ${{ (always() && !failure() && !cancelled()) && inputs.deploy-app }}
+    secrets: inherit
     uses: ./.github/workflows/deploy-app.yml
     with:
       version: ${{ inputs.version }}
