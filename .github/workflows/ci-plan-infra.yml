@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          token: ${{ secrets.RELEASE_PAT }}
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Configure AWS Credentials for Monitoring account
         uses: aws-actions/configure-aws-credentials@v4
