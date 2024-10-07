@@ -44,7 +44,7 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
-      - uses: WalletConnect/actions/github/paths-filter/@2.4.1
+      - uses: WalletConnect/actions/github/paths-filter/@2.5.3
         id: filter
     outputs:
       infra: ${{ steps.filter.outputs.infra }}

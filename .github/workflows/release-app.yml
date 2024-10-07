@@ -44,10 +44,13 @@ jobs:
           submodules: recursive
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           fetch-depth: 0
+          # Don't persist the credentials because we are using the token to fetch the 
+          # private submodule and then we are using different token to create a release
+          persist-credentials: false
 
       - name: Release
         id: release
-        uses: WalletConnect/actions/github/update-rust-version/@2.4.1
+        uses: WalletConnect/actions/github/update-rust-version/@2.5.3
         with:
           token: ${{ secrets.RELEASE_PAT }}
     outputs:

@@ -86,7 +86,7 @@ jobs:
     steps:
       - name: Get task definition from ECS
         id: get_task
-        uses: WalletConnect/actions/aws/ecs/get-task-image/@2.4.1
+        uses: WalletConnect/actions/aws/ecs/get-task-image/@2.5.3
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}
           aws-region: ${{ inputs.aws-region }}
