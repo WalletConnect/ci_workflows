@@ -236,4 +236,5 @@ jobs:
           submodules: recursive
       - uses: EmbarkStudios/cargo-deny-action@v1
         with:
+          rust-version: ${{ inputs.rust-toolchain }}
           command: check license
