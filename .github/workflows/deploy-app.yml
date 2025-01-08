@@ -76,7 +76,7 @@ jobs:
 
       - name: Deploy image to ECS
         id: deploy
-        uses: WalletConnect/actions/aws/ecs/deploy-image/@2.5.3
+        uses: WalletConnect/actions/aws/ecs/deploy-image/@2.5.4
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}
           aws-region: ${{ inputs.aws-region }}
