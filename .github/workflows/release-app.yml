@@ -50,7 +50,7 @@ jobs:
 
       - name: Release
         id: release
-        uses: WalletConnect/actions/github/update-rust-version/@2.5.3
+        uses: WalletConnect/actions/github/update-rust-version/@2.5.4
         with:
           token: ${{ secrets.RELEASE_PAT }}
     outputs:
