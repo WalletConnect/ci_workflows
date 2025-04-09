@@ -234,7 +234,7 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           rust-version: ${{ inputs.rust-toolchain }}
           command: check license
