@@ -19,6 +19,10 @@ on:
         description: 'The name of the Grafana workspace for the monitoring deployment'
         type: string
         default: ${{ vars.GRAFANA_WORKSPACE_NAME }}
+      grafana-workspace-sla-name:
+        description: 'The name of the Grafana SLA workspace for the monitoring deployment'
+        type: string
+        default: ${{ vars.GRAFANA_SLA_WORKSPACE_NAME }}
       tf-directory:
         description: 'The directory containing the Terraform files'
         type: string
@@ -79,7 +83,15 @@ jobs:
         with:
           workspace-name: ${{ inputs.grafana-workspace-name }}
           key-prefix: ${{ github.event.repository.name }}
-
+      
+      - name: Create Grafana SLA Workspace key
+        id: grafana-get-sla-key
+        if: ${{ inputs.grafana-workspace-sla-name }}
+        uses: WalletConnect/ci_workflows/.github/actions/grafana-key@main
+        with:
+          workspace-name: ${{ inputs.grafana-workspace-sla-name }}
+          key-prefix: ${{ github.event.repository.name }}-sla
+      
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -102,6 +114,7 @@ jobs:
           variables: |
             image_version:${{ inputs.version }}
             grafana_auth:${{ steps.grafana-get-key.outputs.key }}
+            sla_grafana_auth:${{ steps.grafana-get-sla-key.outputs.key }}
             ${{ inputs.tf-variables }}
 
       - name: Apply on ${{ inputs.stage }}
@@ -114,3 +127,10 @@ jobs:
         with:
           workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
           key-name: ${{ steps.grafana-get-key.outputs.key-name }}
+      
+      - name: Delete Grafana SLA workspace key
+        if: ${{ inputs.grafana-workspace-sla-name }}
+        uses: WalletConnect/actions/aws/grafana/delete-key/@2.5.4
+        with:
+          workspace-id: ${{ steps.grafana-get-sla-key.outputs.workspace-id }}
+          key-name: ${{ steps.grafana-get-sla-key.outputs.key-name }}
