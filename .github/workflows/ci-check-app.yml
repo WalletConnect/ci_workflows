@@ -79,6 +79,10 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -114,6 +118,10 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -144,6 +152,10 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -193,6 +205,10 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -230,6 +246,10 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+          cache-workspace-crates: true
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
