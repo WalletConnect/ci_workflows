@@ -77,12 +77,17 @@ jobs:
           components: 'cargo,clippy'
           override: true
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          cache-on-failure: true
-          cache-all-crates: true
-          cache-workspace-crates: true
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -116,12 +121,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          cache-on-failure: true
-          cache-all-crates: true
-          cache-workspace-crates: true
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -150,12 +160,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          cache-on-failure: true
-          cache-all-crates: true
-          cache-workspace-crates: true
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -203,12 +218,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          cache-on-failure: true
-          cache-all-crates: true
-          cache-workspace-crates: true
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -244,12 +264,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
         with:
-          cache-on-failure: true
-          cache-all-crates: true
-          cache-workspace-crates: true
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
