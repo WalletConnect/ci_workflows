@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -98,7 +98,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -124,7 +124,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -162,7 +162,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -204,7 +204,7 @@ jobs:
     if: ${{ inputs.check-udeps }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -230,7 +230,7 @@ jobs:
     name: Licenses
     runs-on: ${{ inputs.run-label }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
