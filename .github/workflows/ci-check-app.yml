@@ -77,6 +77,9 @@ jobs:
           components: 'cargo,clippy'
           override: true
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
         uses: arduino/setup-protoc@v3
@@ -109,6 +112,9 @@ jobs:
           profile: 'default'
           override: true
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
         uses: mozilla-actions/sccache-action@v0.0.4
@@ -135,6 +141,9 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'default'
           override: true
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -182,6 +191,9 @@ jobs:
           profile: 'default'
           override: true
 
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
         uses: arduino/setup-protoc@v3
@@ -215,6 +227,9 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
           profile: 'default'
           override: true
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
