@@ -64,7 +64,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -76,6 +76,16 @@ jobs:
           profile: 'minimal'
           components: 'cargo,clippy'
           override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -98,7 +108,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -108,6 +118,16 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain-formatting }}
           profile: 'default'
           override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -124,7 +144,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -135,6 +155,16 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'default'
           override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -162,7 +192,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -181,6 +211,16 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
           profile: 'default'
           override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -204,7 +244,7 @@ jobs:
     if: ${{ inputs.check-udeps }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -215,6 +255,16 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
           profile: 'default'
           override: true
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -230,7 +280,7 @@ jobs:
     name: Licenses
     runs-on: ${{ inputs.run-label }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
