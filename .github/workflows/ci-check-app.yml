@@ -84,8 +84,7 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
-            target/debug/deps/
-            target/debug/.fingerprint/
+            target/
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
@@ -127,8 +126,7 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
-            target/debug/deps/
-            target/debug/.fingerprint/
+            target/
           key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
@@ -165,8 +163,7 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
-            target/debug/deps/
-            target/debug/.fingerprint/
+            target/
           key: ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
@@ -222,8 +219,7 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
-            target/debug/deps/
-            target/debug/.fingerprint/
+            target/
           key: ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
@@ -267,8 +263,7 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
-            target/debug/deps/
-            target/debug/.fingerprint/
+            target/
           key: ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
