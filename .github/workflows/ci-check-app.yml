@@ -87,8 +87,6 @@ jobs:
             target/debug/deps/
             target/debug/.fingerprint/
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -132,8 +130,6 @@ jobs:
             target/debug/deps/
             target/debug/.fingerprint/
           key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -172,8 +168,6 @@ jobs:
             target/debug/deps/
             target/debug/.fingerprint/
           key: ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -231,8 +225,6 @@ jobs:
             target/debug/deps/
             target/debug/.fingerprint/
           key: ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -278,8 +270,6 @@ jobs:
             target/debug/deps/
             target/debug/.fingerprint/
           key: ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
