@@ -86,6 +86,8 @@ jobs:
             ~/.cargo/git/
             target/
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -128,6 +130,8 @@ jobs:
             ~/.cargo/git/
             target/
           key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -165,6 +169,8 @@ jobs:
             ~/.cargo/git/
             target/
           key: ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -221,6 +227,8 @@ jobs:
             ~/.cargo/git/
             target/
           key: ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -265,6 +273,8 @@ jobs:
             ~/.cargo/git/
             target/
           key: ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
