@@ -51,6 +51,14 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      rust-cache-prefix:
+        description: 'Prefix for Rust cache key (bump to invalidate all caches)'
+        type: string
+        default: 'v0-rust'
+      rust-cache-save:
+        description: 'Whether to save the Rust cache (set to false for PRs to only restore from main)'
+        type: boolean
+        default: true
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -64,7 +72,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -77,15 +85,17 @@ jobs:
           components: 'cargo,clippy'
           override: true
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
+      - name: Restore Cargo cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -103,12 +113,23 @@ jobs:
           command: clippy
           args: --workspace --all-features --all-targets -- -D warnings
 
+      - name: Save Cargo cache
+        if: ${{ inputs.rust-cache-save }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+
   formatting:
     name: Formatting
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -119,15 +140,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
+      - name: Restore Cargo cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -139,12 +162,23 @@ jobs:
           command: fmt
           args: -- --check
 
+      - name: Save Cargo cache
+        if: ${{ inputs.rust-cache-save }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
+
   tests:
     name: Unit Tests
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -156,15 +190,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
+      - name: Restore Cargo cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -182,6 +218,17 @@ jobs:
           command: test
           args: ${{ inputs.test-args }}
 
+      - name: Save Cargo cache
+        if: ${{ inputs.rust-cache-save }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
+
   tests-suites:
     name: Tests Suite "${{ matrix.element }}"
     if: (inputs.test-suites != '') && (inputs.test-suites != '[]')
@@ -192,7 +239,7 @@ jobs:
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -212,15 +259,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
+      - name: Restore Cargo cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -238,13 +287,24 @@ jobs:
           command: test
           args: --test ${{ matrix.element }}
 
+      - name: Save Cargo cache
+        if: ${{ inputs.rust-cache-save }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
+
   unused-dependencies:
     name: Unused Dependencies
     runs-on: ${{ inputs.run-label }}
     if: ${{ inputs.check-udeps }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
@@ -256,15 +316,17 @@ jobs:
           profile: 'default'
           override: true
 
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
+      - name: Restore Cargo cache
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/
             target/
-          key: ${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -276,11 +338,22 @@ jobs:
           version: 'v0.1.43'
           args: '--all-targets'
 
+      - name: Save Cargo cache
+        if: ${{ inputs.rust-cache-save }}
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/
+            target/
+          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
+
   license:
     name: Licenses
     runs-on: ${{ inputs.run-label }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
