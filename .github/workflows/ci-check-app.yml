@@ -78,12 +78,10 @@ jobs:
           submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-          profile: 'minimal'
-          components: 'cargo,clippy'
-          override: true
+          components: clippy
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -108,10 +106,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Clippy
-        uses: WalletConnect/actions-rs/cargo@2.0.0
-        with:
-          command: clippy
-          args: --workspace --all-features --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-features --all-targets -- -D warnings
 
       - name: Save Cargo cache
         if: ${{ inputs.rust-cache-save }}
@@ -134,11 +129,10 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
       - name: Install Rust ${{ inputs.rust-toolchain-formatting }}
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain-formatting }}
-          profile: 'default'
-          override: true
+          components: rustfmt
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -157,10 +151,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Check Formatting
-        uses: WalletConnect/actions-rs/cargo@2.0.0
-        with:
-          command: fmt
-          args: -- --check
+        run: cargo fmt -- --check
 
       - name: Save Cargo cache
         if: ${{ inputs.rust-cache-save }}
@@ -184,11 +175,9 @@ jobs:
           submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-          profile: 'default'
-          override: true
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -213,10 +202,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Unit Tests
-        uses: WalletConnect/actions-rs/cargo@2.0.0
-        with:
-          command: test
-          args: ${{ inputs.test-args }}
+        run: cargo test ${{ inputs.test-args }}
 
       - name: Save Cargo cache
         if: ${{ inputs.rust-cache-save }}
@@ -253,11 +239,9 @@ jobs:
         uses: ikalnytskyi/action-setup-postgres@v5
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain }}
-          profile: 'default'
-          override: true
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -282,10 +266,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Test Suite
-        uses: WalletConnect/actions-rs/cargo@2.0.0
-        with:
-          command: test
-          args: --test ${{ matrix.element }}
+        run: cargo test --test ${{ matrix.element }}
 
       - name: Save Cargo cache
         if: ${{ inputs.rust-cache-save }}
@@ -310,11 +291,9 @@ jobs:
           submodules: recursive
 
       - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
-          profile: 'default'
-          override: true
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -332,11 +311,11 @@ jobs:
         if: ${{ inputs.use-sccache == true }}
         uses: mozilla-actions/sccache-action@v0.0.4
 
+      - name: Install cargo-udeps
+        run: cargo install cargo-udeps@0.1.43 --locked
+
       - name: Check Dependencies
-        uses: WalletConnect/actions-rs/udeps@2.0.0
-        with:
-          version: 'v0.1.43'
-          args: '--all-targets'
+        run: cargo udeps --all-targets
 
       - name: Save Cargo cache
         if: ${{ inputs.rust-cache-save }}

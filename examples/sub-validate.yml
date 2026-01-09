@@ -40,12 +40,10 @@ jobs:
           submodules: recursive
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
-      - name: "Install Rust ${{ inputs.version }}"
-        uses: WalletConnect/actions-rs/toolchain@2.0.0
+      - name: "Install Rust ${{ vars.RUST_VERSION }}"
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ vars.RUST_VERSION }}
-          profile: 'default'
-          override: true
 
       - name: Restore Cargo cache
         uses: actions/cache/restore@v4
@@ -60,13 +58,10 @@ jobs:
             v0-rust-${{ runner.os }}-cargo-integration-
 
       - name: "Run Integration Tests"
-        uses: WalletConnect/actions-rs/cargo@2.0.0
         env:
           PROJECT_ID: ${{ secrets.PROJECT_ID }}
           RPC_URL: ${{ inputs.stage-url }}
-        with:
-          command: test
-          args: --test integration
+        run: cargo test --test integration
 
       - name: Save Cargo cache
         uses: actions/cache/save@v4
