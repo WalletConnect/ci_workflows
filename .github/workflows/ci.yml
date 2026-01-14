@@ -108,10 +108,14 @@ on:
     secrets:
       TF_API_TOKEN:
         required: true
+      ANTHROPIC_API_KEY:
+        required: false
+        description: 'Anthropic API key for Claude AI terraform plan review'
 
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 jobs:
   check-app:
