@@ -42,10 +42,13 @@ on:
     secrets:
       TF_API_TOKEN:
         required: true
+      ANTHROPIC_API_KEY:
+        required: false
 
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 concurrency: deploy-${{ inputs.stage }}
 
@@ -106,7 +109,25 @@ jobs:
 
       - name: Plan ${{ inputs.stage }}
         working-directory: ${{ inputs.tf-directory }}
-        run: terraform plan -no-color
+        run: |
+          set -o pipefail
+          terraform plan -no-color 2>&1 | tee /tmp/plan_output.txt
+
+      - name: Upload Plan Output
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ inputs.stage }}
+          path: /tmp/plan_output.txt
+          retention-days: 1
+
+      - name: Claude AI Review
+        if: github.event_name == 'pull_request' && secrets.ANTHROPIC_API_KEY != ''
+        continue-on-error: true
+        uses: WalletConnect/actions/claude/terraform-plan-review@master
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          terraform_plan_file: /tmp/plan_output.txt
 
       - name: Delete Grafana key
         if: ${{ always() }}
