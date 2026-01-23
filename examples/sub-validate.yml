@@ -46,6 +46,7 @@ jobs:
           toolchain: ${{ vars.RUST_VERSION }}
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -56,6 +57,10 @@ jobs:
           key: v0-rust-${{ runner.os }}-cargo-integration-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             v0-rust-${{ runner.os }}-cargo-integration-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: "Run Integration Tests"
         env:
