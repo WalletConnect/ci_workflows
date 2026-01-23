@@ -122,7 +122,7 @@ jobs:
           retention-days: 1
 
       - name: Claude AI Review
-        if: github.event_name == 'pull_request' && secrets.ANTHROPIC_API_KEY != ''
+        if: github.event_name == 'pull_request'
         continue-on-error: true
         uses: WalletConnect/actions/claude/terraform-plan-review@master
         with:
