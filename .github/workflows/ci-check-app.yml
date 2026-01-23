@@ -84,6 +84,7 @@ jobs:
           components: clippy
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -94,6 +95,10 @@ jobs:
           key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -135,6 +140,7 @@ jobs:
           components: rustfmt
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -145,6 +151,10 @@ jobs:
           key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
@@ -180,6 +190,7 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -190,6 +201,10 @@ jobs:
           key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -244,6 +259,7 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -254,6 +270,10 @@ jobs:
           key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -296,6 +316,7 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
 
       - name: Restore Cargo cache
+        id: cache-restore
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -306,6 +327,10 @@ jobs:
           key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-
+
+      - name: Clean target if Cargo.lock changed
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: rm -rf target/
 
       - name: Run sccache-cache
         if: ${{ inputs.use-sccache == true }}
