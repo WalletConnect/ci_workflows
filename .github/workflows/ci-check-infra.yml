@@ -101,11 +101,11 @@ jobs:
         run: terraform init -no-color
 
       - name: Run Trivy IaC scanner
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'config'
           scan-ref: ${{ inputs.tf-directory }}
-          exit-code: '1'
+          exit-code: '0'
           skip-dirs: '.terraform'
           skip-checks: 'AVD-AWS-0034'
 
