@@ -75,8 +75,8 @@ jobs:
         working-directory: ${{ inputs.tf-directory }}
         run: terraform validate
 
-  tfsec:
-    name: TFSec
+  trivy:
+    name: Trivy
     runs-on: ${{ inputs.run-label }}
     steps:
       - name: Checkout
@@ -100,11 +100,16 @@ jobs:
         working-directory: ${{ inputs.tf-directory }}
         run: terraform init -no-color
 
-      - uses: aquasecurity/tfsec-action@v1.0.3
+      - name: Run Trivy IaC scanner
+        uses: aquasecurity/trivy-action@v0.35.0
+        env:
+          TRIVY_SKIP_CHECKS: AVD-AWS-0034
         with:
-          working_directory: ${{ inputs.tf-directory }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          additional_args: '--exclude aws-ecs-enable-container-insight'
+          scan-type: 'config'
+          scan-ref: ${{ inputs.tf-directory }}
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+          skip-dirs: '.terraform'
 
   tflint:
     name: TFLint
