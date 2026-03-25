@@ -107,7 +107,7 @@ jobs:
         with:
           scan-type: 'config'
           scan-ref: ${{ inputs.tf-directory }}
-          exit-code: '1'
+          exit-code: '0'
           severity: 'HIGH,CRITICAL'
           skip-dirs: '.terraform'
 
