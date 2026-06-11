@@ -36,7 +36,12 @@ on:
         type: boolean
         default: true
       use-sccache:
-        description: 'Run sccache-cache before running tests'
+        # DEPRECATED / no-op: sccache had no persistent backend configured here
+        # (its object store was never cached), so it provided no cross-run
+        # benefit and disabled incremental compilation, which fights the
+        # Swatinem/rust-cache target/ cache. The input is kept so existing
+        # callers (and ci.yml) don't break; it no longer wires anything.
+        description: '(deprecated, no-op) Run sccache-cache before running tests'
         type: boolean
         default: true
       use-postgresql:
@@ -83,22 +88,12 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain }}
           components: clippy
 
-      - name: Restore Cargo cache
-        id: cache-restore
-        uses: actions/cache/restore@v4
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-
-
-      - name: Clean target if Cargo.lock changed
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        run: rm -rf target/
+          prefix-key: ${{ inputs.rust-cache-prefix }}
+          shared-key: clippy
+          save-if: ${{ inputs.rust-cache-save }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -106,23 +101,8 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run sccache-cache
-        if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.4
-
       - name: Clippy
         run: cargo clippy --workspace --all-features --all-targets -- -D warnings
-
-      - name: Save Cargo cache
-        if: ${{ inputs.rust-cache-save }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
 
   formatting:
     name: Formatting
@@ -139,40 +119,10 @@ jobs:
           toolchain: ${{ inputs.rust-toolchain-formatting }}
           components: rustfmt
 
-      - name: Restore Cargo cache
-        id: cache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-
-
-      - name: Clean target if Cargo.lock changed
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        run: rm -rf target/
-
-      - name: Run sccache-cache
-        if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.4
-
+      # `cargo fmt -- --check` does not compile anything, so there is no target/
+      # or dependency cache to restore here.
       - name: Check Formatting
         run: cargo fmt -- --check
-
-      - name: Save Cargo cache
-        if: ${{ inputs.rust-cache-save }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-formatting-${{ hashFiles('**/Cargo.lock') }}
 
   tests:
     name: Unit Tests
@@ -189,22 +139,12 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
 
-      - name: Restore Cargo cache
-        id: cache-restore
-        uses: actions/cache/restore@v4
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-
-
-      - name: Clean target if Cargo.lock changed
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        run: rm -rf target/
+          prefix-key: ${{ inputs.rust-cache-prefix }}
+          shared-key: tests
+          save-if: ${{ inputs.rust-cache-save }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -212,23 +152,8 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run sccache-cache
-        if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.4
-
       - name: Unit Tests
         run: cargo test ${{ inputs.test-args }}
-
-      - name: Save Cargo cache
-        if: ${{ inputs.rust-cache-save }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-${{ hashFiles('**/Cargo.lock') }}
 
   tests-suites:
     name: Tests Suite "${{ matrix.element }}"
@@ -258,22 +183,12 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
 
-      - name: Restore Cargo cache
-        id: cache-restore
-        uses: actions/cache/restore@v4
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-
-
-      - name: Clean target if Cargo.lock changed
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        run: rm -rf target/
+          prefix-key: ${{ inputs.rust-cache-prefix }}
+          shared-key: tests-suites
+          save-if: ${{ inputs.rust-cache-save }}
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -281,23 +196,8 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run sccache-cache
-        if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.4
-
       - name: Test Suite
         run: cargo test --test ${{ matrix.element }}
-
-      - name: Save Cargo cache
-        if: ${{ inputs.rust-cache-save }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-tests-suites-${{ hashFiles('**/Cargo.lock') }}
 
   unused-dependencies:
     name: Unused Dependencies
@@ -315,43 +215,18 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain-udeps }}
 
-      - name: Restore Cargo cache
-        id: cache-restore
-        uses: actions/cache/restore@v4
+      - name: Rust cache
+        uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-
-
-      - name: Clean target if Cargo.lock changed
-        if: steps.cache-restore.outputs.cache-hit != 'true'
-        run: rm -rf target/
-
-      - name: Run sccache-cache
-        if: ${{ inputs.use-sccache == true }}
-        uses: mozilla-actions/sccache-action@v0.0.4
+          prefix-key: ${{ inputs.rust-cache-prefix }}
+          shared-key: unused-deps
+          save-if: ${{ inputs.rust-cache-save }}
 
       - name: Install cargo-udeps
         run: cargo install cargo-udeps@0.1.43 --locked
 
       - name: Check Dependencies
         run: cargo udeps --all-targets
-
-      - name: Save Cargo cache
-        if: ${{ inputs.rust-cache-save }}
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/
-            ~/.cargo/git/
-            target/
-          key: ${{ inputs.rust-cache-prefix }}-${{ runner.os }}-cargo-unused-deps-${{ hashFiles('**/Cargo.lock') }}
 
   license:
     name: Licenses
