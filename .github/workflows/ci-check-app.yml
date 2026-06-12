@@ -44,6 +44,15 @@ on:
         description: '(deprecated, no-op) Run sccache-cache before running tests'
         type: boolean
         default: true
+      use-mold:
+        # Opt-in (default false): mold is a linker, so it only helps jobs that
+        # link a binary — i.e. tests / tests-suites, not clippy (check-only) or
+        # fmt (no compile). Keep this OFF for `cargo test --release` / LTO test
+        # builds: mold can't read ThinLTO bitcode objects without the LLVM
+        # plugin and the final link fails.
+        description: 'Use the mold linker (clang driver) for the test jobs. Only for non-LTO debug test builds.'
+        type: boolean
+        default: false
       use-postgresql:
         description: 'Run postgresql before running tests'
         type: boolean
@@ -139,6 +148,14 @@ jobs:
         with:
           toolchain: ${{ inputs.rust-toolchain }}
 
+      # Before the cache step so RUSTFLAGS is part of the Swatinem cache key.
+      - name: Set up mold linker
+        if: ${{ inputs.use-mold }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mold clang
+          echo "RUSTFLAGS=${RUSTFLAGS:+$RUSTFLAGS }-C linker=clang -C link-arg=-fuse-ld=mold" >> "$GITHUB_ENV"
+
       - name: Rust cache
         uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
         with:
@@ -182,6 +199,14 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-toolchain }}
+
+      # Before the cache step so RUSTFLAGS is part of the Swatinem cache key.
+      - name: Set up mold linker
+        if: ${{ inputs.use-mold }}
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mold clang
+          echo "RUSTFLAGS=${RUSTFLAGS:+$RUSTFLAGS }-C linker=clang -C link-arg=-fuse-ld=mold" >> "$GITHUB_ENV"
 
       - name: Rust cache
         uses: Swatinem/rust-cache@23869a5bd66c73db3c0ac40331f3206eb23791dc # v2.9.1
