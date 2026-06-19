@@ -47,6 +47,10 @@ on:
         description: 'Run `sccache-cache` before running rust tests'
         type: boolean
         default: true
+      rust-use-mold:
+        description: 'Use the mold linker for the rust test jobs (opt-in; non-LTO debug builds only)'
+        type: boolean
+        default: false
       rust-use-postgresql:
         description: 'Run postgresql before running rust tests'
         type: boolean
@@ -133,6 +137,7 @@ jobs:
       rust-backtrace: ${{ inputs.rust-backtrace }}
       install-protoc: ${{ inputs.rust-install-protoc }}
       use-sccache: ${{ inputs.rust-use-sccache }}
+      use-mold: ${{ inputs.rust-use-mold }}
       use-postgresql: ${{ inputs.rust-use-postgresql }}
       test-env-vars: ${{ inputs.rust-test-env-vars }}
       run-label: ${{ inputs.run-label }}

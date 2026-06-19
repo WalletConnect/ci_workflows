@@ -17,7 +17,7 @@ on:
         type: string
         default: ${{ vars.AWS_REGION }}
       run-label:
-        description: 'The run label to use for the actions'
+        description: 'The run label to use for the build job (the heavy compile). Push jobs always use ubuntu-latest.'
         type: string
         default: 'ubuntu-latest'
     secrets:
@@ -44,7 +44,7 @@ jobs:
           submodules: recursive
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           fetch-depth: 0
-          # Don't persist the credentials because we are using the token to fetch the 
+          # Don't persist the credentials because we are using the token to fetch the
           # private submodule and then we are using different token to create a release
           persist-credentials: false
 
@@ -63,18 +63,114 @@ jobs:
     steps:
       - run: echo "Version = ${{ needs.update_version.outputs.version }}"
 
+  # Build the image ONCE (one compile) and export it as a tarball artifact. The
+  # per-env publish jobs below load this tarball and push to each environment's
+  # ECR, so staging + prod no longer each recompile the identical image. Same
+  # build-once / push-per-env pattern as pay-core's canary image.
+  build:
+    name: Build ${{ needs.update_version.outputs.version }}
+    needs: [ update_version ]
+    runs-on: ${{ inputs.run-label }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.update_version.outputs.version }}
+          token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+          submodules: recursive
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image to tarball
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          tags: release-image:${{ needs.update_version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-image
+          path: /tmp/image.tar
+          retention-days: 1
+
   publish:
     name: Publish ${{ needs.update_version.outputs.version }} ❱❱ ${{ matrix.env.name }}
-    needs: [ update_version ]
+    needs: [ update_version, build ]
     strategy:
       fail-fast: false
       matrix:
         env: ${{ fromJson(inputs.publish-envs) }}
-    secrets: inherit
-    uses: ./.github/workflows/build-publish.yml
-    with:
-      version: ${{ needs.update_version.outputs.version }}
-      image-name: ${{ inputs.image-name }}
-      aws-region: ${{ inputs.aws-region }}
-      aws-role-arn: ${{ matrix.env.role }}
-      run-label: ${{ inputs.run-label }}
+    # Push-only: no compile here, so a small runner is enough regardless of the
+    # build runner.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ matrix.env.role }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          logout: false
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load -i /tmp/image.tar
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+            ${{ steps.login-ecr.outputs.registry }}/${{ inputs.image-name }}
+            walletconnect/${{ inputs.image-name }},enable=false
+          flavor: |
+            latest=auto
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ needs.update_version.outputs.version }}
+          # Tag immutability prevents usage of `latest`
+          # type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Tag and push image
+        env:
+          SRC: release-image:${{ needs.update_version.outputs.version }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$TAGS" | while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Pushing $tag"
+            docker tag "$SRC" "$tag"
+            docker push "$tag"
+          done
