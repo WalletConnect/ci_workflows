@@ -67,6 +67,11 @@ on:
           the deploy idempotent under any re-run. App is checked against
           `version` (via `stage-url`/health), infra against `github.sha` (via the
           deployed_infra_commit SSM marker). Default false = unchanged behaviour.
+          Opting in expects `version` to be a git commit SHA and `stage-url` to
+          serve the `commit hash: <sha>` banner; a non-commit `version` or an
+          unreadable banner fails OPEN with a warning (never a false block).
+          `freshness-module-id` is REQUIRED when enforce-fresh (missing it fails
+          the infra apply closed).
         type: boolean
         default: false
       freshness-module-id:

@@ -98,40 +98,43 @@ jobs:
       # cannot roll the app back. A STEP here (not an upstream gate job) so it
       # re-evaluates whenever this job runs. Fail-open on an unreadable /health;
       # fail-closed on a live commit unresolvable in git history.
+      # allow-stale bypasses the guard entirely (step skipped → skip output empty
+      # → deploy runs), so a deliberate rollback can't be wedged by the guard's own
+      # machinery (unresolvable target, etc.).
       - name: Assert fresh
         id: freshness
-        if: ${{ inputs.enforce-fresh }}
+        if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
+        shell: bash
         env:
           TARGET: ${{ inputs.freshness-target-commit }}
           HEALTH_URL: ${{ inputs.stage-url }}
-          ALLOW_STALE: ${{ inputs.freshness-allow-stale }}
         run: |
           set -euo pipefail
           git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$TARGET" 2>/dev/null || true; fi
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
-            echo "::error::assert-fresh(app): target ${TARGET} is not a resolvable commit"; exit 1
+            # Target isn't a git commit (e.g. a semver/'latest' ECR tag from a
+            # non-pay-core consumer). Can't ancestry-check → fail OPEN, LOUDLY,
+            # so it never masquerades as protection.
+            echo "::warning::assert-fresh(app): target '${TARGET}' is not a git commit — cannot evaluate freshness; proceeding UNGUARDED"
+            echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
           health="$(curl -fsS --max-time 15 --retry 3 --retry-delay 5 "$HEALTH_URL" || true)"
-          short="$(printf '%s' "$health" | sed -n 's/.*commit hash: \([0-9a-f]\{7,40\}\).*/\1/p;T;q')"
+          short="$(printf '%s' "$health" | grep -oiE 'commit hash: [0-9a-f]{7,40}' | head -n1 | awk '{print $3}')"
           running=""; [ -z "$short" ] || running="$(git rev-parse "$short" 2>/dev/null || echo "$short")"
           skip=false
           if [ -z "$running" ] || [ "$running" = "None" ]; then
-            echo "app: live version unknown — not blocking"
+            echo "::warning::assert-fresh(app): live version unreadable at ${HEALTH_URL} — proceeding UNGUARDED (fail-open)"
           else
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
-              echo "::warning::app: live ${running:0:7} unresolvable — stale"; skip=true
+              echo "::warning::assert-fresh(app): live ${running:0:7} unresolvable in history — treating as stale"; skip=true
             elif git merge-base --is-ancestor "$running" "$TARGET"; then
-              echo "app: live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
+              echo "assert-fresh(app): live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
             else
-              echo "::warning::app: live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already live"; skip=true
+              echo "::warning::assert-fresh(app): live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already live; skipping ECS deploy"; skip=true
             fi
           fi
-          if [ "$skip" = "true" ] && [ "$ALLOW_STALE" = "true" ]; then
-            echo "::notice::app: STALE but allow-stale set — proceeding"; skip=false
-          fi
-          [ "$skip" = "true" ] && echo "::notice::app: STALE — skipping ECS deploy (a newer version is already live)" || true
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
       - name: Deploy image to ECS

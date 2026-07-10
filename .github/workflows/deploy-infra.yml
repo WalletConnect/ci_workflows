@@ -98,8 +98,13 @@ jobs:
       # set: skip `terraform apply` if the live infra commit is already
       # newer/divergent vs what this run would apply, so a stale re-run cannot
       # roll infra back. A step inside this job → re-evaluates on any re-run.
+      # allow-stale bypasses the guard entirely (steps skipped → skip output empty
+      # → apply runs), so a deliberate rollback isn't wedged by the guard itself.
+      # continue-on-error on the creds step: a transient STS/OIDC blip must not
+      # wedge the deploy — the SSM read then fails and the guard fails OPEN.
       - name: Configure AWS Credentials for freshness read
-        if: ${{ inputs.enforce-fresh }}
+        if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.freshness-aws-role-arn }}
@@ -107,14 +112,19 @@ jobs:
 
       - name: Assert fresh
         id: freshness
-        if: ${{ inputs.enforce-fresh }}
+        if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
+        shell: bash
         env:
           TARGET: ${{ inputs.freshness-target-commit }}
           MODULE_ID: ${{ inputs.freshness-module-id }}
           AWS_REGION: ${{ inputs.aws-region }}
-          ALLOW_STALE: ${{ inputs.freshness-allow-stale }}
         run: |
           set -euo pipefail
+          # A guard that can't locate its marker would silently NOT protect — the
+          # exact failure mode this exists to prevent. Fail CLOSED on missing config.
+          if [ -z "$MODULE_ID" ]; then
+            echo "::error::assert-fresh(infra): enforce-fresh is set but freshness-module-id is empty — refusing to apply unguarded"; exit 1
+          fi
           git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$TARGET" 2>/dev/null || true; fi
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
@@ -123,21 +133,17 @@ jobs:
           running="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/dev/null || true)"
           skip=false
           if [ -z "$running" ] || [ "$running" = "None" ] || [ "$running" = "unknown" ]; then
-            echo "infra: live marker unknown — not blocking"
+            echo "::warning::assert-fresh(infra): live marker unreadable (/${MODULE_ID}/deployed_infra_commit) — proceeding UNGUARDED (fail-open)"
           else
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
-              echo "::warning::infra: live ${running:0:7} unresolvable — stale"; skip=true
+              echo "::warning::assert-fresh(infra): live ${running:0:7} unresolvable in history — treating as stale"; skip=true
             elif git merge-base --is-ancestor "$running" "$TARGET"; then
-              echo "infra: live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
+              echo "assert-fresh(infra): live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
             else
-              echo "::warning::infra: live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already applied"; skip=true
+              echo "::warning::assert-fresh(infra): live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already applied; skipping terraform apply"; skip=true
             fi
           fi
-          if [ "$skip" = "true" ] && [ "$ALLOW_STALE" = "true" ]; then
-            echo "::notice::infra: STALE but allow-stale set — proceeding"; skip=false
-          fi
-          [ "$skip" = "true" ] && echo "::notice::infra: STALE — skipping terraform apply (a newer commit is already applied)" || true
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS Credentials for Monitoring account
