@@ -120,7 +120,11 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
           health="$(curl -fsS --max-time 15 --retry 3 --retry-delay 5 "$HEALTH_URL" || true)"
-          short="$(printf '%s' "$health" | grep -oiE 'commit hash: [0-9a-f]{7,40}' | head -n1 | awk '{print $3}')"
+          # `|| true`: grep exits 1 when the banner is absent (curl failed / body
+          # lacks the token — common when /health flaps during an ECS cycle); under
+          # `set -euo pipefail` that would kill the step BEFORE the fail-open branch,
+          # turning warn-and-proceed into a red deploy. Keep it fail-open.
+          short="$(printf '%s' "$health" | grep -oiE 'commit hash: [0-9a-f]{7,40}' | head -n1 | awk '{print $3}' || true)"
           running=""; [ -z "$short" ] || running="$(git rev-parse "$short" 2>/dev/null || echo "$short")"
           skip=false
           if [ -z "$running" ] || [ "$running" = "None" ]; then
