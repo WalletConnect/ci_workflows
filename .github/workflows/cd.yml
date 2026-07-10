@@ -59,6 +59,24 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      enforce-fresh:
+        description: >
+          Opt-in re-run-safe freshness guard. When true, the infra apply and the
+          app deploy each re-read the live version immediately before applying and
+          skip (green no-op) if a newer/divergent version is already live — making
+          the deploy idempotent under any re-run. App is checked against
+          `version` (via `stage-url`/health), infra against `github.sha` (via the
+          deployed_infra_commit SSM marker). Default false = unchanged behaviour.
+        type: boolean
+        default: false
+      freshness-module-id:
+        description: 'Terraform module.this.id prefix, for the infra SSM marker read. Required when enforce-fresh.'
+        type: string
+        default: ''
+      freshness-allow-stale:
+        description: 'Bypass the freshness guard (deliberate rollback from an older ref).'
+        type: boolean
+        default: false
 
 concurrency: cd-${{ inputs.stage }}
 
@@ -83,6 +101,11 @@ jobs:
       tf-directory: ${{ inputs.tf-directory }}
       tf-variables: ${{ inputs.tf-variables }}
       run-label: ${{ inputs.run-label }}
+      enforce-fresh: ${{ inputs.enforce-fresh }}
+      freshness-target-commit: ${{ github.sha }}
+      freshness-module-id: ${{ inputs.freshness-module-id }}
+      freshness-aws-role-arn: ${{ inputs.aws-role-arn }}
+      freshness-allow-stale: ${{ inputs.freshness-allow-stale }}
 
   deploy-app:
     name: Deploy App
@@ -99,3 +122,6 @@ jobs:
       aws-role-arn: ${{ inputs.aws-role-arn }}
       aws-region: ${{ inputs.aws-region }}
       run-label: ${{ inputs.run-label }}
+      enforce-fresh: ${{ inputs.enforce-fresh }}
+      freshness-target-commit: ${{ inputs.version }}
+      freshness-allow-stale: ${{ inputs.freshness-allow-stale }}

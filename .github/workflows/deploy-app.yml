@@ -35,6 +35,24 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      enforce-fresh:
+        description: >
+          Opt-in re-run-safe guard. When true, immediately before the ECS deploy
+          this job re-reads the live app version and SKIPS the deploy (green
+          no-op) if it is NOT an ancestor-or-equal of `freshness-target-commit` —
+          i.e. a newer/divergent version is already live, so deploying would roll
+          it back. Being a step inside this job, it re-evaluates on any re-run.
+          Default false = unchanged behaviour for callers that do not opt in.
+        type: boolean
+        default: false
+      freshness-target-commit:
+        description: 'Commit this run intends to make live (the image tag/sha). Required when enforce-fresh.'
+        type: string
+        default: ''
+      freshness-allow-stale:
+        description: 'Bypass the guard (deliberate rollback from an older ref).'
+        type: boolean
+        default: false
 
 concurrency: deploy-${{ inputs.stage }}
 
@@ -74,8 +92,51 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Re-run-safe freshness guard (opt-in). Compare-and-set: skip the deploy if
+      # the live app version is already newer/divergent vs the version this run
+      # would ship — so a stale re-run (or a superseded run's "re-run this job")
+      # cannot roll the app back. A STEP here (not an upstream gate job) so it
+      # re-evaluates whenever this job runs. Fail-open on an unreadable /health;
+      # fail-closed on a live commit unresolvable in git history.
+      - name: Assert fresh
+        id: freshness
+        if: ${{ inputs.enforce-fresh }}
+        env:
+          TARGET: ${{ inputs.freshness-target-commit }}
+          HEALTH_URL: ${{ inputs.stage-url }}
+          ALLOW_STALE: ${{ inputs.freshness-allow-stale }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
+          if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$TARGET" 2>/dev/null || true; fi
+          if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
+            echo "::error::assert-fresh(app): target ${TARGET} is not a resolvable commit"; exit 1
+          fi
+          health="$(curl -fsS --max-time 15 --retry 3 --retry-delay 5 "$HEALTH_URL" || true)"
+          short="$(printf '%s' "$health" | sed -n 's/.*commit hash: \([0-9a-f]\{7,40\}\).*/\1/p;T;q')"
+          running=""; [ -z "$short" ] || running="$(git rev-parse "$short" 2>/dev/null || echo "$short")"
+          skip=false
+          if [ -z "$running" ] || [ "$running" = "None" ]; then
+            echo "app: live version unknown — not blocking"
+          else
+            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
+            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
+              echo "::warning::app: live ${running:0:7} unresolvable — stale"; skip=true
+            elif git merge-base --is-ancestor "$running" "$TARGET"; then
+              echo "app: live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
+            else
+              echo "::warning::app: live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already live"; skip=true
+            fi
+          fi
+          if [ "$skip" = "true" ] && [ "$ALLOW_STALE" = "true" ]; then
+            echo "::notice::app: STALE but allow-stale set — proceeding"; skip=false
+          fi
+          [ "$skip" = "true" ] && echo "::notice::app: STALE — skipping ECS deploy (a newer version is already live)" || true
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
       - name: Deploy image to ECS
         id: deploy
+        if: ${{ steps.freshness.outputs.skip != 'true' }}
         uses: WalletConnect/actions/aws/ecs/deploy-image/@2.5.4
         with:
           aws-role-arn: ${{ inputs.aws-role-arn }}

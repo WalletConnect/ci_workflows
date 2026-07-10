@@ -39,6 +39,31 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      enforce-fresh:
+        description: >
+          Opt-in re-run-safe guard. When true, immediately before `terraform
+          apply` this job re-reads the live infra commit (the deployed_infra_commit
+          SSM marker) and SKIPS the apply (green no-op) if it is NOT an
+          ancestor-or-equal of `freshness-target-commit`. A step inside this job,
+          so it re-evaluates on any re-run. Default false = unchanged behaviour.
+        type: boolean
+        default: false
+      freshness-target-commit:
+        description: 'Commit this run intends to apply (github.sha). Required when enforce-fresh.'
+        type: string
+        default: ''
+      freshness-module-id:
+        description: 'Terraform module.this.id prefix, for the deployed_infra_commit SSM marker read. Required when enforce-fresh.'
+        type: string
+        default: ''
+      freshness-aws-role-arn:
+        description: 'AWS role to assume to read the SSM marker (the app account, not monitoring). Required when enforce-fresh.'
+        type: string
+        default: ''
+      freshness-allow-stale:
+        description: 'Bypass the guard (deliberate rollback from an older ref).'
+        type: boolean
+        default: false
     secrets:
       TF_API_TOKEN:
         required: true
@@ -66,6 +91,54 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
+
+      # Re-run-safe freshness guard (opt-in), placed BEFORE the monitoring-creds
+      # config so that config restores monitoring creds for the Grafana steps
+      # (this guard needs app-account creds to read the SSM marker). Compare-and-
+      # set: skip `terraform apply` if the live infra commit is already
+      # newer/divergent vs what this run would apply, so a stale re-run cannot
+      # roll infra back. A step inside this job → re-evaluates on any re-run.
+      - name: Configure AWS Credentials for freshness read
+        if: ${{ inputs.enforce-fresh }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.freshness-aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Assert fresh
+        id: freshness
+        if: ${{ inputs.enforce-fresh }}
+        env:
+          TARGET: ${{ inputs.freshness-target-commit }}
+          MODULE_ID: ${{ inputs.freshness-module-id }}
+          AWS_REGION: ${{ inputs.aws-region }}
+          ALLOW_STALE: ${{ inputs.freshness-allow-stale }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
+          if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$TARGET" 2>/dev/null || true; fi
+          if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
+            echo "::error::assert-fresh(infra): target ${TARGET} is not a resolvable commit"; exit 1
+          fi
+          running="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/dev/null || true)"
+          skip=false
+          if [ -z "$running" ] || [ "$running" = "None" ] || [ "$running" = "unknown" ]; then
+            echo "infra: live marker unknown — not blocking"
+          else
+            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
+            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
+              echo "::warning::infra: live ${running:0:7} unresolvable — stale"; skip=true
+            elif git merge-base --is-ancestor "$running" "$TARGET"; then
+              echo "infra: live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
+            else
+              echo "::warning::infra: live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already applied"; skip=true
+            fi
+          fi
+          if [ "$skip" = "true" ] && [ "$ALLOW_STALE" = "true" ]; then
+            echo "::notice::infra: STALE but allow-stale set — proceeding"; skip=false
+          fi
+          [ "$skip" = "true" ] && echo "::notice::infra: STALE — skipping terraform apply (a newer commit is already applied)" || true
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
       - name: Configure AWS Credentials for Monitoring account
         uses: aws-actions/configure-aws-credentials@v4
@@ -105,6 +178,7 @@ jobs:
             ${{ inputs.tf-variables }}
 
       - name: Apply on ${{ inputs.stage }}
+        if: ${{ steps.freshness.outputs.skip != 'true' }}
         working-directory: ${{ inputs.tf-directory }}
         run: terraform apply -auto-approve -no-color
 
