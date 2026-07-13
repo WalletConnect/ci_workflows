@@ -264,4 +264,4 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           rust-version: ${{ inputs.rust-toolchain }}
-          command: check license
+          command: check licenses
