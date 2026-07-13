@@ -100,11 +100,12 @@ jobs:
       # roll infra back. A step inside this job → re-evaluates on any re-run.
       # allow-stale bypasses the guard entirely (steps skipped → skip output empty
       # → apply runs), so a deliberate rollback isn't wedged by the guard itself.
-      # continue-on-error on the creds step: a transient STS/OIDC blip must not
-      # wedge the deploy — the SSM read then fails and the guard fails OPEN.
+      # No continue-on-error: the marker read below fails CLOSED, so a creds
+      # failure should surface loudly at THIS step (with the OIDC error) and block
+      # the apply — not be swallowed and re-surface as a confusing "can't read
+      # marker" at the next step. Rerun, or set freshness-allow-stale to override.
       - name: Configure AWS Credentials for freshness read
         if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
-        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.freshness-aws-role-arn }}
@@ -143,15 +144,14 @@ jobs:
           skip=false
           if [ "$ssm_rc" -ne 0 ]; then
             if grep -q "ParameterNotFound" /tmp/ssm_err; then
-              echo "::warning::assert-fresh(infra): marker /${MODULE_ID}/deployed_infra_commit not created yet (first apply) — proceeding"
-              running=""
+              running=""   # marker not created yet (first apply) — the open check below logs it
             else
               echo "::error::assert-fresh(infra): could not read the deployed_infra_commit marker ($(tr -d '\n' </tmp/ssm_err)) — refusing to apply blind (fail-closed). Rerun once SSM is reachable, or set freshness-allow-stale for a deliberate override."
               exit 1
             fi
           fi
           if [ -z "$running" ] || [ "$running" = "None" ] || [ "$running" = "unknown" ]; then
-            echo "assert-fresh(infra): no prior successful-apply marker — proceeding (nothing to roll back)"
+            echo "::warning::assert-fresh(infra): no usable live marker (empty/None/unknown, e.g. first apply or a never-completed prior apply) — proceeding UNGUARDED (nothing to compare against)"
           else
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
