@@ -130,10 +130,28 @@ jobs:
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
             echo "::error::assert-fresh(infra): target ${TARGET} is not a resolvable commit"; exit 1
           fi
-          running="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/dev/null || true)"
+          # Read the marker distinguishing "not created yet" (legit first apply →
+          # fail OPEN) from a genuine read ERROR — access denied, throttle, timeout
+          # (anomalous → fail CLOSED). SSM is a reliable read, so an error here is a
+          # real red flag and we will NOT apply blind and risk a rollback. (The app
+          # /health guard stays fail-open because it flaps during ECS cycling; this
+          # marker does not.) `freshness-allow-stale` overrides for a deliberate run.
+          set +e
+          running="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/tmp/ssm_err)"
+          ssm_rc=$?
+          set -e
           skip=false
+          if [ "$ssm_rc" -ne 0 ]; then
+            if grep -q "ParameterNotFound" /tmp/ssm_err; then
+              echo "::warning::assert-fresh(infra): marker /${MODULE_ID}/deployed_infra_commit not created yet (first apply) — proceeding"
+              running=""
+            else
+              echo "::error::assert-fresh(infra): could not read the deployed_infra_commit marker ($(tr -d '\n' </tmp/ssm_err)) — refusing to apply blind (fail-closed). Rerun once SSM is reachable, or set freshness-allow-stale for a deliberate override."
+              exit 1
+            fi
+          fi
           if [ -z "$running" ] || [ "$running" = "None" ] || [ "$running" = "unknown" ]; then
-            echo "::warning::assert-fresh(infra): live marker unreadable (/${MODULE_ID}/deployed_infra_commit) — proceeding UNGUARDED (fail-open)"
+            echo "assert-fresh(infra): no prior successful-apply marker — proceeding (nothing to roll back)"
           else
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
             if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
