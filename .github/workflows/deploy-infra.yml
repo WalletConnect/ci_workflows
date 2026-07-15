@@ -134,9 +134,9 @@ jobs:
           # Read the marker distinguishing "not created yet" (legit first apply →
           # fail OPEN) from a genuine read ERROR — access denied, throttle, timeout
           # (anomalous → fail CLOSED). SSM is a reliable read, so an error here is a
-          # real red flag and we will NOT apply blind and risk a rollback. (The app
-          # /health guard stays fail-open because it flaps during ECS cycling; this
-          # marker does not.) `freshness-allow-stale` overrides for a deliberate run.
+          # real red flag and we will NOT apply blind and risk a rollback. The app
+          # guard likewise uses the reliable ECS control plane and fails closed.
+          # `freshness-allow-stale` overrides for a deliberate run.
           set +e
           running="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/tmp/ssm_err)"
           ssm_rc=$?
@@ -212,3 +212,52 @@ jobs:
         with:
           workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
           key-name: ${{ steps.grafana-get-key.outputs.key-name }}
+
+      - name: Configure AWS Credentials for marker write
+        if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale && steps.freshness.outputs.skip != 'true' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.freshness-aws-role-arn }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Advance infra marker
+        if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale && steps.freshness.outputs.skip != 'true' }}
+        shell: bash
+        env:
+          SHA: ${{ inputs.freshness-target-commit }}
+          MODULE_ID: ${{ inputs.freshness-module-id }}
+          AWS_REGION: ${{ inputs.aws-region }}
+        run: |
+          set -euo pipefail
+          set +e
+          current="$(aws ssm get-parameter --name "/${MODULE_ID}/deployed_infra_commit" --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/tmp/ssm_err)"
+          ssm_rc=$?
+          set -e
+          if [ "$ssm_rc" -ne 0 ]; then
+            if grep -q "ParameterNotFound" /tmp/ssm_err; then
+              aws ssm put-parameter --name "/${MODULE_ID}/deployed_infra_commit" --type String --overwrite --value "$SHA" --region "$AWS_REGION" >/dev/null
+              exit 0
+            fi
+            echo "::warning::advance-infra-marker: could not read the deployed_infra_commit marker ($(tr -d '\n' </tmp/ssm_err)) — refusing to risk regressing it"
+            exit 0
+          fi
+          if [ -z "$current" ] || [ "$current" = "None" ] || [ "$current" = "unknown" ]; then
+            aws ssm put-parameter --name "/${MODULE_ID}/deployed_infra_commit" --type String --overwrite --value "$SHA" --region "$AWS_REGION" >/dev/null
+            exit 0
+          fi
+          if ! git cat-file -e "${SHA}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$SHA" 2>/dev/null || true; fi
+          if ! git cat-file -e "${current}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$current" 2>/dev/null || true; fi
+          if ! git cat-file -e "${SHA}^{commit}" 2>/dev/null; then
+            echo "::warning::advance-infra-marker: target ${SHA:0:7} is unresolvable in history — marker not advanced"
+            exit 0
+          fi
+          if ! git cat-file -e "${current}^{commit}" 2>/dev/null; then
+            echo "::warning::advance-infra-marker: current marker ${current:0:7} is unresolvable in history — marker not advanced"
+            exit 0
+          fi
+          if git merge-base --is-ancestor "$current" "$SHA"; then
+            aws ssm put-parameter --name "/${MODULE_ID}/deployed_infra_commit" --type String --overwrite --value "$SHA" --region "$AWS_REGION" >/dev/null
+          else
+            echo "::warning::advance-infra-marker: marker ${current:0:7} newer/divergent than ${SHA:0:7} — refusing to regress"
+            exit 0
+          fi

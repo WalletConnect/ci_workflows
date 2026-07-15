@@ -96,8 +96,9 @@ jobs:
       # the live app version is already newer/divergent vs the version this run
       # would ship — so a stale re-run (or a superseded run's "re-run this job")
       # cannot roll the app back. A STEP here (not an upstream gate job) so it
-      # re-evaluates whenever this job runs. Fail-open on an unreadable /health;
-      # fail-closed on a live commit unresolvable in git history.
+      # re-evaluates whenever this job runs. The ECS control plane is a reliable
+      # read, like the infra SSM marker, so a read error fails CLOSED rather than
+      # allowing a deploy to proceed blind.
       # allow-stale bypasses the guard entirely (step skipped → skip output empty
       # → deploy runs), so a deliberate rollback can't be wedged by the guard's own
       # machinery (unresolvable target, etc.).
@@ -107,7 +108,8 @@ jobs:
         shell: bash
         env:
           TARGET: ${{ inputs.freshness-target-commit }}
-          HEALTH_URL: ${{ inputs.stage-url }}
+          NAME: ${{ steps.build_task_name.outputs.name }}
+          AWS_REGION: ${{ inputs.aws-region }}
         run: |
           set -euo pipefail
           git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
@@ -119,25 +121,37 @@ jobs:
             echo "::warning::assert-fresh(app): target '${TARGET}' is not a git commit — cannot evaluate freshness; proceeding UNGUARDED"
             echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          health="$(curl -fsS --max-time 15 --retry 3 --retry-delay 5 "$HEALTH_URL" || true)"
-          # `|| true`: grep exits 1 when the banner is absent (curl failed / body
-          # lacks the token — common when /health flaps during an ECS cycle); under
-          # `set -euo pipefail` that would kill the step BEFORE the fail-open branch,
-          # turning warn-and-proceed into a red deploy. Keep it fail-open.
-          short="$(printf '%s' "$health" | grep -oiE 'commit hash: [0-9a-f]{7,40}' | head -n1 | awk '{print $3}' || true)"
-          running=""; [ -z "$short" ] || running="$(git rev-parse "$short" 2>/dev/null || echo "$short")"
+          set +e
+          td="$(aws ecs describe-services --cluster "${NAME}-cluster" --services "${NAME}-service" --query "services[0].deployments[?status=='PRIMARY'].taskDefinition | [0]" --output text --region "$AWS_REGION" 2>/tmp/ecs_err)"
+          ecs_rc=$?
+          set -e
+          if [ "$ecs_rc" -ne 0 ] || [ -z "$td" ] || [ "$td" = "None" ]; then
+            echo "::error::assert-fresh(app): could not read the PRIMARY ECS task definition ($(tr -d '\n' </tmp/ecs_err)) — refusing to deploy blind (fail-closed). Rerun once ECS is reachable, or set freshness-allow-stale."
+            exit 1
+          fi
+          set +e
+          image="$(aws ecs describe-task-definition --task-definition "$td" --query "taskDefinition.containerDefinitions[?name=='${NAME}'].image | [0]" --output text --region "$AWS_REGION" 2>/tmp/ecs_err)"
+          image_rc=$?
+          set -e
+          if [ "$image_rc" -ne 0 ] || [ -z "$image" ] || [ "$image" = "None" ]; then
+            set +e
+            image="$(aws ecs describe-task-definition --task-definition "$td" --query "taskDefinition.containerDefinitions[0].image" --output text --region "$AWS_REGION" 2>/tmp/ecs_err)"
+            image_rc=$?
+            set -e
+          fi
+          if [ "$image_rc" -ne 0 ] || [ -z "$image" ] || [ "$image" = "None" ]; then
+            echo "::error::assert-fresh(app): could not read the PRIMARY ECS task definition ($(tr -d '\n' </tmp/ecs_err)) — refusing to deploy blind (fail-closed). Rerun once ECS is reachable, or set freshness-allow-stale."
+            exit 1
+          fi
+          running="${image##*:}"
           skip=false
-          if [ -z "$running" ] || [ "$running" = "None" ]; then
-            echo "::warning::assert-fresh(app): live version unreadable at ${HEALTH_URL} — proceeding UNGUARDED (fail-open)"
+          if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
+          if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
+            echo "::warning::assert-fresh(app): live ${running:0:7} unresolvable in history — treating as stale"; skip=true
+          elif git merge-base --is-ancestor "$running" "$TARGET"; then
+            echo "assert-fresh(app): live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
           else
-            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$running" 2>/dev/null || true; fi
-            if ! git cat-file -e "${running}^{commit}" 2>/dev/null; then
-              echo "::warning::assert-fresh(app): live ${running:0:7} unresolvable in history — treating as stale"; skip=true
-            elif git merge-base --is-ancestor "$running" "$TARGET"; then
-              echo "assert-fresh(app): live ${running:0:7} is an ancestor of ${TARGET:0:7} — fresh"
-            else
-              echo "::warning::assert-fresh(app): live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already live; skipping ECS deploy"; skip=true
-            fi
+            echo "::warning::assert-fresh(app): live ${running:0:7} is NOT an ancestor of ${TARGET:0:7} — newer/divergent already live; skipping ECS deploy"; skip=true
           fi
           echo "skip=$skip" >> "$GITHUB_OUTPUT"
 
