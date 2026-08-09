@@ -101,6 +101,10 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      run-label-light:
+        description: 'Runner for check-app jobs that never compile the workspace (Formatting, Licenses)'
+        type: string
+        default: 'ubuntu-latest'
       rust-cache-prefix:
         description: 'Prefix for Rust cache key (bump to invalidate all caches)'
         type: string
@@ -141,6 +145,7 @@ jobs:
       use-postgresql: ${{ inputs.rust-use-postgresql }}
       test-env-vars: ${{ inputs.rust-test-env-vars }}
       run-label: ${{ inputs.run-label }}
+      run-label-light: ${{ inputs.run-label-light }}
       rust-cache-prefix: ${{ inputs.rust-cache-prefix }}
       rust-cache-save: ${{ inputs.rust-cache-save }}
 
