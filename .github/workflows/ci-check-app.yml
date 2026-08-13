@@ -65,6 +65,10 @@ on:
         description: 'The run label to use for the actions'
         type: string
         default: 'ubuntu-latest'
+      run-label-light:
+        description: 'Runner for jobs that never compile the workspace (Formatting, Licenses). These jobs gain nothing from a larger runner: `cargo fmt -- --check` only parses, and cargo-deny runs a prebuilt binary against cargo metadata.'
+        type: string
+        default: 'ubuntu-latest'
       rust-cache-prefix:
         description: 'Prefix for Rust cache key (bump to invalidate all caches)'
         type: string
@@ -115,7 +119,7 @@ jobs:
 
   formatting:
     name: Formatting
-    runs-on: ${{ inputs.run-label }}
+    runs-on: ${{ inputs.run-label-light }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -255,7 +259,7 @@ jobs:
 
   license:
     name: Licenses
-    runs-on: ${{ inputs.run-label }}
+    runs-on: ${{ inputs.run-label-light }}
     steps:
       - uses: actions/checkout@v6
         with:
