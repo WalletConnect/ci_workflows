@@ -68,7 +68,7 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Configure AWS Credentials for Monitoring account
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ inputs.aws-role-monitoring-arn }}
           aws-region: ${{ inputs.aws-region }}
@@ -81,12 +81,12 @@ jobs:
           key-prefix: ${{ github.event.repository.name }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}

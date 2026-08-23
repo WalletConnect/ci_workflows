@@ -38,7 +38,7 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
@@ -57,12 +57,12 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -86,12 +86,12 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -122,12 +122,12 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
       - name: Cache Terraform data
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ inputs.tf-directory }}/.terraform
           key: terraform-${{ hashFiles('${{ inputs.tf-directory }}/.terraform.lock.hcl') }}
@@ -137,12 +137,12 @@ jobs:
         run: terraform init -no-color
 
       - name: Setup TFLint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.45.0
 
       - name: Cache `tflint` plugins
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.tflint.d/plugins
           key: tflint-${{ hashFiles('${{ inputs.tf-directory }}/.tflint.hcl') }}
