@@ -61,27 +61,16 @@ on:
         default: 'ubuntu-latest'
       enforce-fresh:
         description: >
-          Opt-in re-run-safe freshness guard. When true, the infra apply and the
-          app deploy each re-read the live version immediately before applying and
-          skip (green no-op) if a newer/divergent version is already live — making
-          the deploy idempotent under any re-run. App is checked against
-          `version` (via `stage-url`/health), infra against `github.sha` (via the
-          deployed_infra_commit SSM marker). Default false = unchanged behaviour.
-          Opting in expects `version` to be a git commit SHA and `stage-url` to
-          serve the `commit hash: <sha>` banner. Read-failure policy: the app
-          `/health` read fails OPEN (it flaps during ECS cycling — a warning, never
-          a false block), but the reliable infra SSM-marker read fails CLOSED on a
-          genuine error (access denied / throttle / timeout — refuses to apply
-          blind), while a not-yet-created marker still proceeds. `freshness-module-id`
-          is REQUIRED when enforce-fresh; `freshness-allow-stale` overrides all of it.
+          Re-check live app and infra commits before applying; skip when either is
+          newer or divergent. Defaults to false.
         type: boolean
         default: false
       freshness-module-id:
-        description: 'Terraform module.this.id prefix, for the infra SSM marker read. Required when enforce-fresh.'
+        description: 'Terraform module ID used to read the infra deploy marker.'
         type: string
         default: ''
       freshness-allow-stale:
-        description: 'Bypass the freshness guard (deliberate rollback from an older ref).'
+        description: 'Bypass freshness checks for a deliberate rollback.'
         type: boolean
         default: false
 

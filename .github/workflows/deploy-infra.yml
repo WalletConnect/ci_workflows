@@ -40,28 +40,23 @@ on:
         type: string
         default: 'ubuntu-latest'
       enforce-fresh:
-        description: >
-          Opt-in re-run-safe guard. When true, immediately before `terraform
-          apply` this job re-reads the live infra commit (the deployed_infra_commit
-          SSM marker) and SKIPS the apply (green no-op) if it is NOT an
-          ancestor-or-equal of `freshness-target-commit`. A step inside this job,
-          so it re-evaluates on any re-run. Default false = unchanged behaviour.
+        description: 'Skip when the live infra commit is newer or divergent.'
         type: boolean
         default: false
       freshness-target-commit:
-        description: 'Commit this run intends to apply (github.sha). Required when enforce-fresh.'
+        description: 'Commit this run intends to apply.'
         type: string
         default: ''
       freshness-module-id:
-        description: 'Terraform module.this.id prefix, for the deployed_infra_commit SSM marker read. Required when enforce-fresh.'
+        description: 'Terraform module ID used to read the infra deploy marker.'
         type: string
         default: ''
       freshness-aws-role-arn:
-        description: 'AWS role to assume to read the SSM marker (the app account, not monitoring). Required when enforce-fresh.'
+        description: 'App-account AWS role used to read the infra deploy marker.'
         type: string
         default: ''
       freshness-allow-stale:
-        description: 'Bypass the guard (deliberate rollback from an older ref).'
+        description: 'Bypass freshness checks for a deliberate rollback.'
         type: boolean
         default: false
     secrets:
@@ -92,18 +87,8 @@ jobs:
           submodules: recursive
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
 
-      # Re-run-safe freshness guard (opt-in), placed BEFORE the monitoring-creds
-      # config so that config restores monitoring creds for the Grafana steps
-      # (this guard needs app-account creds to read the SSM marker). Compare-and-
-      # set: skip `terraform apply` if the live infra commit is already
-      # newer/divergent vs what this run would apply, so a stale re-run cannot
-      # roll infra back. A step inside this job → re-evaluates on any re-run.
-      # allow-stale bypasses the guard entirely (steps skipped → skip output empty
-      # → apply runs), so a deliberate rollback isn't wedged by the guard itself.
-      # No continue-on-error: the marker read below fails CLOSED, so a creds
-      # failure should surface loudly at THIS step (with the OIDC error) and block
-      # the apply — not be swallowed and re-surface as a confusing "can't read
-      # marker" at the next step. Rerun, or set freshness-allow-stale to override.
+      # Use app-account credentials for the marker read, then restore monitoring
+      # credentials below. Credential and marker read failures block the apply.
       - name: Configure AWS Credentials for freshness read
         if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
         uses: aws-actions/configure-aws-credentials@v4
@@ -121,8 +106,7 @@ jobs:
           AWS_REGION: ${{ inputs.aws-region }}
         run: |
           set -euo pipefail
-          # A guard that can't locate its marker would silently NOT protect — the
-          # exact failure mode this exists to prevent. Fail CLOSED on missing config.
+          # Missing marker configuration would disable the guard.
           if [ -z "$MODULE_ID" ]; then
             echo "::error::assert-fresh(infra): enforce-fresh is set but freshness-module-id is empty — refusing to apply unguarded"; exit 1
           fi

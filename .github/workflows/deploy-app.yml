@@ -36,21 +36,15 @@ on:
         type: string
         default: 'ubuntu-latest'
       enforce-fresh:
-        description: >
-          Opt-in re-run-safe guard. When true, immediately before the ECS deploy
-          this job re-reads the live app version and SKIPS the deploy (green
-          no-op) if it is NOT an ancestor-or-equal of `freshness-target-commit` —
-          i.e. a newer/divergent version is already live, so deploying would roll
-          it back. Being a step inside this job, it re-evaluates on any re-run.
-          Default false = unchanged behaviour for callers that do not opt in.
+        description: 'Skip when the live app commit is newer or divergent.'
         type: boolean
         default: false
       freshness-target-commit:
-        description: 'Commit this run intends to make live (the image tag/sha). Required when enforce-fresh.'
+        description: 'Commit this run intends to deploy.'
         type: string
         default: ''
       freshness-allow-stale:
-        description: 'Bypass the guard (deliberate rollback from an older ref).'
+        description: 'Bypass freshness checks for a deliberate rollback.'
         type: boolean
         default: false
 
@@ -92,16 +86,8 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Re-run-safe freshness guard (opt-in). Compare-and-set: skip the deploy if
-      # the live app version is already newer/divergent vs the version this run
-      # would ship — so a stale re-run (or a superseded run's "re-run this job")
-      # cannot roll the app back. A STEP here (not an upstream gate job) so it
-      # re-evaluates whenever this job runs. The ECS control plane is a reliable
-      # read, like the infra SSM marker, so a read error fails CLOSED rather than
-      # allowing a deploy to proceed blind.
-      # allow-stale bypasses the guard entirely (step skipped → skip output empty
-      # → deploy runs), so a deliberate rollback can't be wedged by the guard's own
-      # machinery (unresolvable target, etc.).
+      # Re-check at the apply boundary so every re-run is guarded. ECS read
+      # failures block the deploy; allow-stale skips this step.
       - name: Assert fresh
         id: freshness
         if: ${{ inputs.enforce-fresh && !inputs.freshness-allow-stale }}
@@ -115,9 +101,7 @@ jobs:
           git fetch --no-tags --prune --unshallow origin 2>/dev/null || git fetch --no-tags origin 2>/dev/null || true
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then git fetch --no-tags origin "$TARGET" 2>/dev/null || true; fi
           if ! git cat-file -e "${TARGET}^{commit}" 2>/dev/null; then
-            # Target isn't a git commit (e.g. a semver/'latest' ECR tag from a
-            # non-pay-core consumer). Can't ancestry-check → fail OPEN, LOUDLY,
-            # so it never masquerades as protection.
+            # Non-commit image tags cannot be ancestry-checked.
             echo "::warning::assert-fresh(app): target '${TARGET}' is not a git commit — cannot evaluate freshness; proceeding UNGUARDED"
             echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
