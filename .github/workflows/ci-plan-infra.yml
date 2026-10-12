@@ -15,10 +15,6 @@ on:
         description: 'The URL of the environment'
         type: string
         required: true
-      grafana-workspace-name:
-        description: 'The name of the Grafana workspace for the monitoring deployment'
-        type: string
-        default: ${{ vars.GRAFANA_WORKSPACE_NAME }}
       tf-directory:
         description: 'The directory containing the Terraform files'
         type: string
@@ -76,13 +72,6 @@ jobs:
           role-to-assume: ${{ inputs.aws-role-monitoring-arn }}
           aws-region: ${{ inputs.aws-region }}
 
-      - name: Create Grafana key
-        id: grafana-get-key
-        uses: WalletConnect/ci_workflows/.github/actions/grafana-key@main
-        with:
-          workspace-name: ${{ inputs.grafana-workspace-name }}
-          key-prefix: ${{ github.event.repository.name }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -104,7 +93,6 @@ jobs:
           infra-directory: ${{ inputs.tf-directory }}
           variables: |
             image_version:${{ inputs.version }}
-            grafana_auth:${{ steps.grafana-get-key.outputs.key }}
             ${{ inputs.tf-variables }}
 
       - name: Plan ${{ inputs.stage }}
@@ -128,10 +116,3 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           terraform_plan_file: /tmp/plan_output.txt
-
-      - name: Delete Grafana key
-        if: ${{ always() }}
-        uses: WalletConnect/actions/aws/grafana/delete-key/@2.5.4
-        with:
-          workspace-id: ${{ steps.grafana-get-key.outputs.workspace-id }}
-          key-name: ${{ steps.grafana-get-key.outputs.key-name }}
