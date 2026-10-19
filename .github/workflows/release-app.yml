@@ -23,6 +23,9 @@ on:
     secrets:
       RELEASE_PAT:
         required: true
+      CARGO_GIT_SSH_KEY:
+        required: false
+        description: 'Optional SSH private key (e.g. a read-only deploy key) for fetching private git dependencies over SSH. When empty, nothing changes.'
     outputs:
       version:
         description: 'The released version'
@@ -32,6 +35,11 @@ permissions:
   contents: write
   id-token: write
   packages: write
+
+env:
+  # 'true' when the caller provides CARGO_GIT_SSH_KEY. Secrets can't be used in
+  # `if:`, so steps test this flag instead. It holds only a boolean, never the key.
+  HAS_CARGO_GIT_SSH_KEY: ${{ secrets.CARGO_GIT_SSH_KEY != '' }}
 
 jobs:
   update_version:
@@ -85,6 +93,14 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Opt-in (only when the caller provides CARGO_GIT_SSH_KEY): load the key into
+      # an ssh-agent so private git dependencies can be fetched over SSH.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
       - name: Build image to tarball
         uses: docker/build-push-action@v5
         with:
@@ -93,6 +109,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/image.tar
+          # Forward the agent only when CARGO_GIT_SSH_KEY is provided, for
+          # Dockerfiles that fetch private git deps with `RUN --mount=type=ssh`.
+          ssh: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' && 'default' || '' }}
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v7
