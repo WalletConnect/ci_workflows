@@ -63,6 +63,9 @@ on:
     secrets:
       RELEASE_PAT:
         required: true
+      CARGO_GIT_SSH_KEY:
+        required: false
+        description: 'Optional SSH private key (e.g. a read-only deploy key) for fetching private git dependencies over SSH. When empty, nothing changes.'
     outputs:
       version:
         description: 'The version of the release'

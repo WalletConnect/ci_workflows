@@ -62,6 +62,7 @@ graph LR
 
 - _`GITHUB_TOKEN`_
 - _`TF_API_TOKEN`_
+- _`CARGO_GIT_SSH_KEY`_ (optional, see [Private git dependencies](../README.md#private-git-dependencies))
 
 ## Dependencies
 

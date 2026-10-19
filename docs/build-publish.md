@@ -56,6 +56,7 @@ graph TB
 ## Repository Secrets
 
 - `GITHUB_TOKEN`
+- _`CARGO_GIT_SSH_KEY`_ (optional, see [Private git dependencies](../README.md#private-git-dependencies))
 
 ## Dependencies
 

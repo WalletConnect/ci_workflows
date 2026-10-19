@@ -51,3 +51,29 @@
 - `GITHUB_TOKEN`
 - `TF_API_TOKEN`
 - `RELEASE_PAT`
+- `CARGO_GIT_SSH_KEY` (optional, see [Private git dependencies](#private-git-dependencies))
+
+## Private git dependencies
+
+Services whose `Cargo.toml` pulls a private git repository over SSH (e.g.
+`ssh://git@github.com/WalletConnect/<repo>.git`) can opt in by adding a
+repository secret named `CARGO_GIT_SSH_KEY` holding an SSH private key that can
+read that repository (typically a read-only deploy key on it). Callers that use
+`secrets: inherit` need no other change; callers that map secrets explicitly
+pass `CARGO_GIT_SSH_KEY: ${{ secrets.<your-secret> }}`.
+
+When the secret is set:
+
+- [`ci-check-app.yml`](.github/workflows/ci-check-app.yml): the Clippy, Unit
+  Tests, Tests Suite and Unused Dependencies jobs load the key into an ssh-agent
+  ([`webfactory/ssh-agent`](https://github.com/webfactory/ssh-agent)) and set
+  `CARGO_NET_GIT_FETCH_WITH_CLI=true` before the first cargo step. The Licenses
+  job runs a pinned, checksum-verified `cargo-deny` on the runner instead of
+  `EmbarkStudios/cargo-deny-action` (whose container can't reach the agent),
+  with the same toolchain and arguments.
+- [`release-app.yml`](.github/workflows/release-app.yml) and
+  [`build-publish.yml`](.github/workflows/build-publish.yml): the agent is
+  loaded and forwarded to the Docker build (`ssh: default`), so the Dockerfile
+  can fetch with `RUN --mount=type=ssh cargo build ...`.
+
+When the secret is absent or empty, every job runs exactly as before.

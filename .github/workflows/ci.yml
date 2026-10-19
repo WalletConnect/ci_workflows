@@ -115,6 +115,9 @@ on:
       ANTHROPIC_API_KEY:
         required: false
         description: 'Anthropic API key for Claude AI terraform plan review'
+      CARGO_GIT_SSH_KEY:
+        required: false
+        description: 'Optional SSH private key (e.g. a read-only deploy key) for fetching private git dependencies over SSH. When empty, nothing changes.'
 
 permissions:
   contents: read

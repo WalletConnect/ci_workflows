@@ -77,9 +77,19 @@ on:
         description: 'Whether to save the Rust cache (set to false for PRs to only restore from main)'
         type: boolean
         default: true
+    secrets:
+      PRIVATE_SUBMODULE_ACCESS_TOKEN:
+        required: false
+        description: 'Optional token for checking out private submodules (falls back to github.token).'
+      CARGO_GIT_SSH_KEY:
+        required: false
+        description: 'Optional SSH private key (e.g. a read-only deploy key) for fetching private git dependencies over SSH. When empty, nothing changes.'
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
+  # 'true' when the caller provides CARGO_GIT_SSH_KEY. Secrets can't be used in
+  # `if:`, so steps test this flag instead. It holds only a boolean, never the key.
+  HAS_CARGO_GIT_SSH_KEY: ${{ secrets.CARGO_GIT_SSH_KEY != '' }}
 
 permissions:
   contents: read
@@ -94,6 +104,21 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
+      # Opt-in (only when the caller provides CARGO_GIT_SSH_KEY): load the key into
+      # an ssh-agent so private git dependencies can be fetched over SSH.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
+      # Have cargo fetch git deps with the git CLI, which uses the ssh-agent and
+      # known_hosts set up above. Set before Rust cache, whose `cargo metadata`
+      # resolves git deps and whose cache key includes CARGO_* env vars.
+      - name: Fetch git dependencies with the git CLI
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        run: echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: dtolnay/rust-toolchain@master
@@ -147,6 +172,21 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
 
+      # Opt-in (only when the caller provides CARGO_GIT_SSH_KEY): load the key into
+      # an ssh-agent so private git dependencies can be fetched over SSH.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
+      # Have cargo fetch git deps with the git CLI, which uses the ssh-agent and
+      # known_hosts set up above. Set before Rust cache, whose `cargo metadata`
+      # resolves git deps and whose cache key includes CARGO_* env vars.
+      - name: Fetch git dependencies with the git CLI
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        run: echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: dtolnay/rust-toolchain@master
         with:
@@ -190,6 +230,21 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
+      # Opt-in (only when the caller provides CARGO_GIT_SSH_KEY): load the key into
+      # an ssh-agent so private git dependencies can be fetched over SSH.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
+      # Have cargo fetch git deps with the git CLI, which uses the ssh-agent and
+      # known_hosts set up above. Set before Rust cache, whose `cargo metadata`
+      # resolves git deps and whose cache key includes CARGO_* env vars.
+      - name: Fetch git dependencies with the git CLI
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        run: echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
 
       - name: Parse and export environment variables
         run: |
@@ -239,6 +294,21 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
 
+      # Opt-in (only when the caller provides CARGO_GIT_SSH_KEY): load the key into
+      # an ssh-agent so private git dependencies can be fetched over SSH.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
+      # Have cargo fetch git deps with the git CLI, which uses the ssh-agent and
+      # known_hosts set up above. Set before Rust cache, whose `cargo metadata`
+      # resolves git deps and whose cache key includes CARGO_* env vars.
+      - name: Fetch git dependencies with the git CLI
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        run: echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+
       - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
         uses: dtolnay/rust-toolchain@master
         with:
@@ -266,6 +336,59 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
       - uses: EmbarkStudios/cargo-deny-action@v2
+        # The action runs in a Docker container that can't see the runner's
+        # ssh-agent, so callers with CARGO_GIT_SSH_KEY use the host path below.
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY != 'true' }}
         with:
           rust-version: ${{ inputs.rust-toolchain }}
           command: check licenses
+
+      # Host path (opt-in, only when the caller provides CARGO_GIT_SSH_KEY). It
+      # mirrors the container action above: same toolchain, same cargo-deny
+      # version as cargo-deny-action@v2 ships, same arguments.
+      - name: Load SSH key for private git dependencies
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.CARGO_GIT_SSH_KEY }}
+
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+
+      - name: Install cargo-deny
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        env:
+          # Keep in sync with the `deny_version` in cargo-deny-action@v2's Dockerfile.
+          CARGO_DENY_VERSION: '0.20.2'
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64)
+              target=x86_64-unknown-linux-musl
+              sha256=9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f ;;
+            aarch64|arm64)
+              target=aarch64-unknown-linux-musl
+              sha256=995c82be0defc7a025cae49a2aa2644ce8245c9a3318fc4103907c6a285e8c7d ;;
+            *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+          name="cargo-deny-${CARGO_DENY_VERSION}-${target}"
+          dir="$RUNNER_TEMP/cargo-deny"
+          mkdir -p "$dir"
+          curl -sSfL -o "$dir/$name.tar.gz" \
+            "https://github.com/EmbarkStudios/cargo-deny/releases/download/${CARGO_DENY_VERSION}/${name}.tar.gz"
+          echo "${sha256}  $dir/$name.tar.gz" | sha256sum -c -
+          tar -xzf "$dir/$name.tar.gz" -C "$dir" --strip-components=1 "$name/cargo-deny"
+          echo "$dir" >> "$GITHUB_PATH"
+
+      - name: Check Licenses
+        if: ${{ env.HAS_CARGO_GIT_SSH_KEY == 'true' }}
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+        run: |
+          # Same as the action's entrypoint: honor a rust-toolchain.toml, then run
+          # `cargo-deny --log-level warn --manifest-path ./Cargo.toml --all-features check licenses`.
+          rustup show || rustup toolchain install
+          cargo-deny --log-level warn --manifest-path ./Cargo.toml --all-features check licenses
