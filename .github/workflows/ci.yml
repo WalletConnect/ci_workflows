@@ -109,6 +109,10 @@ on:
         description: 'Whether to save the Rust cache (set to false for PRs to only restore from main)'
         type: boolean
         default: true
+      rust-private-git-deps:
+        description: 'Let Cargo fetch private GitHub git dependencies with the PRIVATE_SUBMODULE_ACCESS_TOKEN secret'
+        type: boolean
+        default: false
     secrets:
       TF_API_TOKEN:
         required: true
@@ -144,6 +148,7 @@ jobs:
       run-label-light: ${{ inputs.run-label-light }}
       rust-cache-prefix: ${{ inputs.rust-cache-prefix }}
       rust-cache-save: ${{ inputs.rust-cache-save }}
+      private-git-deps: ${{ inputs.rust-private-git-deps }}
 
   check-infra:
     name: Check Infra
