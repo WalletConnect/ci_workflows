@@ -77,6 +77,10 @@ on:
         description: 'Whether to save the Rust cache (set to false for PRs to only restore from main)'
         type: boolean
         default: true
+      private-git-deps:
+        description: 'Let Cargo fetch private GitHub git dependencies with the PRIVATE_SUBMODULE_ACCESS_TOKEN secret (git CLI, github.com URLs rewritten to carry the token)'
+        type: boolean
+        default: false
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -94,6 +98,27 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
+      # Exported through GITHUB_ENV so container actions (cargo-deny) see it too.
+      - name: Let Cargo fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          {
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+            echo "GIT_CONFIG_COUNT=2"
+            echo "GIT_CONFIG_KEY_0=${rewrite}"
+            echo "GIT_CONFIG_VALUE_0=https://github.com/"
+            echo "GIT_CONFIG_KEY_1=${rewrite}"
+            echo "GIT_CONFIG_VALUE_1=git@github.com:"
+          } >> "$GITHUB_ENV"
 
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: dtolnay/rust-toolchain@master
@@ -147,6 +172,27 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
 
+      # Exported through GITHUB_ENV so container actions (cargo-deny) see it too.
+      - name: Let Cargo fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          {
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+            echo "GIT_CONFIG_COUNT=2"
+            echo "GIT_CONFIG_KEY_0=${rewrite}"
+            echo "GIT_CONFIG_VALUE_0=https://github.com/"
+            echo "GIT_CONFIG_KEY_1=${rewrite}"
+            echo "GIT_CONFIG_VALUE_1=git@github.com:"
+          } >> "$GITHUB_ENV"
+
       - name: Install Rust ${{ inputs.rust-toolchain }}
         uses: dtolnay/rust-toolchain@master
         with:
@@ -190,6 +236,27 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
+      # Exported through GITHUB_ENV so container actions (cargo-deny) see it too.
+      - name: Let Cargo fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          {
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+            echo "GIT_CONFIG_COUNT=2"
+            echo "GIT_CONFIG_KEY_0=${rewrite}"
+            echo "GIT_CONFIG_VALUE_0=https://github.com/"
+            echo "GIT_CONFIG_KEY_1=${rewrite}"
+            echo "GIT_CONFIG_VALUE_1=git@github.com:"
+          } >> "$GITHUB_ENV"
 
       - name: Parse and export environment variables
         run: |
@@ -239,6 +306,27 @@ jobs:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
 
+      # Exported through GITHUB_ENV so container actions (cargo-deny) see it too.
+      - name: Let Cargo fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          {
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+            echo "GIT_CONFIG_COUNT=2"
+            echo "GIT_CONFIG_KEY_0=${rewrite}"
+            echo "GIT_CONFIG_VALUE_0=https://github.com/"
+            echo "GIT_CONFIG_KEY_1=${rewrite}"
+            echo "GIT_CONFIG_VALUE_1=git@github.com:"
+          } >> "$GITHUB_ENV"
+
       - name: Install Rust ${{ inputs.rust-toolchain-udeps }}
         uses: dtolnay/rust-toolchain@master
         with:
@@ -265,6 +353,27 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
+      # Exported through GITHUB_ENV so container actions (cargo-deny) see it too.
+      - name: Let Cargo fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          {
+            echo "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+            echo "GIT_CONFIG_COUNT=2"
+            echo "GIT_CONFIG_KEY_0=${rewrite}"
+            echo "GIT_CONFIG_VALUE_0=https://github.com/"
+            echo "GIT_CONFIG_KEY_1=${rewrite}"
+            echo "GIT_CONFIG_VALUE_1=git@github.com:"
+          } >> "$GITHUB_ENV"
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           rust-version: ${{ inputs.rust-toolchain }}
