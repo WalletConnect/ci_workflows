@@ -77,6 +77,10 @@ on:
         description: 'Whether to save the Rust cache (set to false for PRs to only restore from main)'
         type: boolean
         default: true
+      private-git-deps:
+        description: 'Fetch private GitHub git dependencies once with the PRIVATE_SUBMODULE_ACCESS_TOKEN secret (scoped to that step), then build offline'
+        type: boolean
+        default: false
 
 env:
   RUST_BACKTRACE: ${{ inputs.rust-backtrace }}
@@ -107,6 +111,26 @@ jobs:
           prefix-key: ${{ inputs.rust-cache-prefix }}
           shared-key: clippy
           save-if: ${{ inputs.rust-cache-save }}
+
+      # The token lives in this step's environment only: one locked fetch,
+      # then every later step builds offline and never sees it (a build
+      # script, proc macro or test binary can't read it).
+      - name: Fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          CARGO_NET_GIT_FETCH_WITH_CLI=true GIT_CONFIG_COUNT=2 \
+            GIT_CONFIG_KEY_0="$rewrite" GIT_CONFIG_VALUE_0=https://github.com/ \
+            GIT_CONFIG_KEY_1="$rewrite" GIT_CONFIG_VALUE_1=git@github.com: \
+            cargo fetch --locked
+          echo "CARGO_NET_OFFLINE=true" >> "$GITHUB_ENV"
 
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
@@ -167,6 +191,26 @@ jobs:
           shared-key: tests
           save-if: ${{ inputs.rust-cache-save }}
 
+      # The token lives in this step's environment only: one locked fetch,
+      # then every later step builds offline and never sees it (a build
+      # script, proc macro or test binary can't read it).
+      - name: Fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          CARGO_NET_GIT_FETCH_WITH_CLI=true GIT_CONFIG_COUNT=2 \
+            GIT_CONFIG_KEY_0="$rewrite" GIT_CONFIG_VALUE_0=https://github.com/ \
+            GIT_CONFIG_KEY_1="$rewrite" GIT_CONFIG_VALUE_1=git@github.com: \
+            cargo fetch --locked
+          echo "CARGO_NET_OFFLINE=true" >> "$GITHUB_ENV"
+
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
         uses: arduino/setup-protoc@v3
@@ -219,6 +263,26 @@ jobs:
           shared-key: tests-suites
           save-if: ${{ inputs.rust-cache-save }}
 
+      # The token lives in this step's environment only: one locked fetch,
+      # then every later step builds offline and never sees it (a build
+      # script, proc macro or test binary can't read it).
+      - name: Fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          CARGO_NET_GIT_FETCH_WITH_CLI=true GIT_CONFIG_COUNT=2 \
+            GIT_CONFIG_KEY_0="$rewrite" GIT_CONFIG_VALUE_0=https://github.com/ \
+            GIT_CONFIG_KEY_1="$rewrite" GIT_CONFIG_VALUE_1=git@github.com: \
+            cargo fetch --locked
+          echo "CARGO_NET_OFFLINE=true" >> "$GITHUB_ENV"
+
       - name: Install Protoc
         if: ${{ inputs.install-protoc == true }}
         uses: arduino/setup-protoc@v3
@@ -254,6 +318,26 @@ jobs:
       - name: Install cargo-udeps
         run: cargo install cargo-udeps@0.1.43 --locked
 
+      # The token lives in this step's environment only: one locked fetch,
+      # then every later step builds offline and never sees it (a build
+      # script, proc macro or test binary can't read it).
+      - name: Fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          CARGO_NET_GIT_FETCH_WITH_CLI=true GIT_CONFIG_COUNT=2 \
+            GIT_CONFIG_KEY_0="$rewrite" GIT_CONFIG_VALUE_0=https://github.com/ \
+            GIT_CONFIG_KEY_1="$rewrite" GIT_CONFIG_VALUE_1=git@github.com: \
+            cargo fetch --locked
+          echo "CARGO_NET_OFFLINE=true" >> "$GITHUB_ENV"
+
       - name: Check Dependencies
         run: cargo udeps --all-targets
 
@@ -265,7 +349,47 @@ jobs:
         with:
           token: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN || github.token }}
           submodules: recursive
+
       - uses: EmbarkStudios/cargo-deny-action@v2
+        if: ${{ !inputs.private-git-deps }}
         with:
           rust-version: ${{ inputs.rust-toolchain }}
           command: check licenses
+
+      # cargo-deny-action runs in a container, which the offline fetch below
+      # doesn't reach: with private git dependencies, cargo-deny runs on the
+      # runner against the fetched dependencies instead.
+      - name: Install Rust ${{ inputs.rust-toolchain }}
+        if: ${{ inputs.private-git-deps }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-toolchain }}
+
+      # The token lives in this step's environment only: one locked fetch,
+      # then every later step builds offline and never sees it (a build
+      # script, proc macro or test binary can't read it).
+      - name: Fetch private git dependencies
+        if: ${{ inputs.private-git-deps }}
+        env:
+          TOKEN: ${{ secrets.PRIVATE_SUBMODULE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TOKEN" ]; then
+            echo "::error::private-git-deps needs the PRIVATE_SUBMODULE_ACCESS_TOKEN secret"
+            exit 1
+          fi
+          rewrite="url.https://x-access-token:${TOKEN}@github.com/.insteadOf"
+          CARGO_NET_GIT_FETCH_WITH_CLI=true GIT_CONFIG_COUNT=2 \
+            GIT_CONFIG_KEY_0="$rewrite" GIT_CONFIG_VALUE_0=https://github.com/ \
+            GIT_CONFIG_KEY_1="$rewrite" GIT_CONFIG_VALUE_1=git@github.com: \
+            cargo fetch --locked
+          echo "CARGO_NET_OFFLINE=true" >> "$GITHUB_ENV"
+
+      - uses: taiki-e/install-action@v2
+        if: ${{ inputs.private-git-deps }}
+        with:
+          tool: cargo-deny@0.19.8
+
+      - name: Check licenses
+        if: ${{ inputs.private-git-deps }}
+        run: cargo deny --log-level warn --all-features check licenses
